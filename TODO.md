@@ -27,8 +27,8 @@ Work items grouped by dependency order. Complete groups in order.
 - [x] Create app/app.json with ble permission and device definition
 - [x] Create drivers/timeflip/driver.js with pairing flow per SPEC §10
 - [x] Create drivers/timeflip/device.js thin adapter to TimeFlipController
-- [ ] Create MockHomeyDevice for tests
-- [ ] Write integration tests for device.js
+- [x] Create MockHomeyDevice for tests
+- [x] Write integration tests for device.js
 
 ---
 

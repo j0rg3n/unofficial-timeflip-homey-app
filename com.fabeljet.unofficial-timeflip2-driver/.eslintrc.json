@@ -4,6 +4,11 @@
     "prefer-template": "off",
     "object-shorthand": "off",
     "strict": "off",
-    "@typescript-eslint/no-unused-vars": "off"
+    "@typescript-eslint/no-unused-vars": "off",
+    "no-console": "off",
+    "prefer-spread": "off",
+    "prefer-rest-params": "off",
+    "no-restricted-syntax": "off",
+    "guard-for-in": "off"
   }
 }
