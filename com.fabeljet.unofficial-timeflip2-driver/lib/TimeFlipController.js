@@ -1,0 +1,175 @@
+const { EventEmitter } = require('events');
+const HistoryParser = require('./HistoryParser');
+const InsightsAccumulator = require('./InsightsAccumulator');
+const {
+  CMD_LOCK_ON,
+  CMD_LOCK_OFF,
+  CMD_PAUSE_ON,
+  CMD_PAUSE_OFF,
+  DEFAULT_PASSWORD,
+  DEFAULT_BRIGHTNESS,
+  DEFAULT_BLINK_INTERVAL,
+  DEFAULT_DOUBLE_TAP_SENSITIVITY,
+} = require('./constants');
+
+class TimeFlipController extends EventEmitter {
+  constructor(client) {
+    super();
+    this.client = client;
+    this.settings = {
+      blePassword: DEFAULT_PASSWORD,
+      brightness: DEFAULT_BRIGHTNESS,
+      blinkInterval: DEFAULT_BLINK_INTERVAL,
+      doubleTapSensitivity: DEFAULT_DOUBLE_TAP_SENSITIVITY,
+      autoPauseDelay: 0,
+    };
+    this.insights = new InsightsAccumulator();
+    this._facetLabels = {};
+    this._lastEventNumber = 0;
+    this._currentFacet = 0;
+    this._isPaused = false;
+    this._isLocked = false;
+    this._activeFacetStart = null;
+    this._facetStartTimes = {};
+  }
+
+  async start(settings = {}) {
+    this.settings = { ...this.settings, ...settings };
+
+    await this.client.connect();
+    const pwValid = await this.client.sendPassword(this.settings.blePassword);
+    if (!pwValid) {
+      throw new Error('Invalid password');
+    }
+
+    await this.client.subscribeToFacets((facet) => {
+      this._onFacetChange(facet);
+    });
+
+    await this.client.subscribeToDoubleTap((facet, paused) => {
+      this._onDoubleTap(facet, paused);
+    });
+
+    this.client.on('disconnect', () => {
+      this.emit('disconnected');
+    });
+
+    const battery = await this.client.readBattery();
+    this.emit('battery_updated', battery);
+  }
+
+  async stop() {
+    await this.client.disconnect();
+  }
+
+  async onReconnect() {
+    const history = await this.client.readHistory(this._lastEventNumber);
+    const parsed = HistoryParser.parse(history);
+    this.insights.ingestHistory(parsed);
+
+    if (parsed.length > 0) {
+      this._lastEventNumber = parsed[parsed.length - 1].eventNumber + 1;
+    }
+
+    this.emit('insights_updated', this.insights.getDailyTotals());
+  }
+
+  async onSettings(newSettings, oldSettings) {
+    this.settings = { ...this.settings, ...newSettings };
+
+    if (newSettings.blePassword && newSettings.blePassword !== oldSettings?.blePassword) {
+      await this.client.sendPassword(newSettings.blePassword);
+    }
+
+    this._facetLabels = {};
+    for (let i = 1; i <= 12; i++) {
+      const label = newSettings[`facet_${i}_label`];
+      if (label) {
+        this._facetLabels[i] = label;
+      }
+    }
+  }
+
+  _onFacetChange(facet) {
+    if (facet === 0) return;
+
+    const prevFacet = this._currentFacet;
+    this._currentFacet = facet;
+    this._facetStartTimes[facet] = Math.floor(Date.now() / 1000);
+
+    this.emit('facet_changed', {
+      facet,
+      facetName: this._facetLabels[facet] || `Facet ${facet}`,
+    });
+
+    this.insights.setActiveFacet(facet, this._facetStartTimes[facet]);
+    this.emit('insights_updated', this.insights.getDailyTotals());
+  }
+
+  _onDoubleTap(facet, paused) {
+    this._isPaused = paused;
+    this.emit('double_tap', {
+      facet,
+      facetName: this._facetLabels[facet] || `Facet ${facet}`,
+      paused,
+    });
+    this.emit('pause_changed', paused);
+  }
+
+  async setPause(paused) {
+    const cmd = paused ? CMD_PAUSE_ON : CMD_PAUSE_OFF;
+    await this.client.writeCommand(cmd);
+    this._isPaused = paused;
+    this.emit('pause_changed', paused);
+  }
+
+  async setLock(locked) {
+    const cmd = locked ? CMD_LOCK_ON : CMD_LOCK_OFF;
+    await this.client.writeCommand(cmd);
+    this._isLocked = locked;
+    this.emit('lock_changed', locked);
+  }
+
+  async setAutoPause(delayMinutes) {
+    const cmd = [0x05, (delayMinutes >> 8) & 0xFF, delayMinutes & 0xFF];
+    await this.client.writeCommand(cmd);
+  }
+
+  async syncTime() {
+    const nowSec = Math.floor(Date.now() / 1000);
+    const cmd = [0x08, ..._uint64LE(nowSec)];
+    await this.client.writeCommand(cmd);
+  }
+
+  getFacetDailyTotals() {
+    return this.insights.getDailyTotals();
+  }
+
+  getCurrentFacetElapsed() {
+    if (!this._currentFacet || !this._facetStartTimes[this._currentFacet]) {
+      return 0;
+    }
+    const elapsed = Math.floor(Date.now() / 1000) - this._facetStartTimes[this._currentFacet];
+    return Math.floor(elapsed / 60);
+  }
+
+  getCurrentFacet() {
+    return this._currentFacet;
+  }
+
+  isPaused() {
+    return this._isPaused;
+  }
+
+  isLocked() {
+    return this._isLocked;
+  }
+}
+
+function _uint64LE(num) {
+  const buf = Buffer.alloc(8);
+  buf.writeBigInt64LE(BigInt(num), 0);
+  return [...buf];
+}
+
+module.exports = TimeFlipController;

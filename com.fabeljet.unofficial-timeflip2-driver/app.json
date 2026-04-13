@@ -1,0 +1,30 @@
+{
+  "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
+  "id": "com.fabeljet.unofficial-timeflip2-driver",
+  "version": "1.0.0",
+  "compatibility": ">=12.4.0",
+  "sdk": 3,
+  "runtime": "nodejs",
+  "platforms": [
+    "local"
+  ],
+  "name": {
+    "en": "Unofficial TimeFlip2 Homey App"
+  },
+  "description": {
+    "en": "Use TimeFlip2 device to control Homey flows."
+  },
+  "category": [
+    "appliances"
+  ],
+  "permissions": [],
+  "images": {
+    "small": "/assets/images/small.png",
+    "large": "/assets/images/large.png",
+    "xlarge": "/assets/images/xlarge.png"
+  },
+  "author": {
+    "name": "Jørgen Seland",
+    "email": "jorgen@fabeljet.com"
+  }
+}
