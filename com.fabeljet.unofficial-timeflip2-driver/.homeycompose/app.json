@@ -16,7 +16,9 @@
   "category": [
     "appliances"
   ],
-  "permissions": [],
+  "permissions": [
+    "homey:wireless:ble"
+  ],
   "images": {
     "small": "/assets/images/small.png",
     "large": "/assets/images/large.png",
@@ -25,5 +27,183 @@
   "author": {
     "name": "Jørgen Seland",
     "email": "jorgen@fabeljet.com"
+  },
+  "drivers": [
+    {
+      "id": "timeflip",
+      "name": { "en": "TimeFlip 2" },
+      "class": "appliance",
+      "capabilities": [
+        "measure_battery",
+        "onoff",
+        "locked",
+        "light_hue",
+        "light_saturation",
+        "light_brightness",
+        "timeflip:facet",
+        "timeflip:facet_name"
+      ],
+      "settings": [
+        {
+          "id": "ble_password",
+          "type": "string",
+          "label": { "en": "BLE Password" },
+          "value": "000000",
+          "hint": { "en": "6-digit password" }
+        },
+        {
+          "id": "double_tap_sensitivity",
+          "type": "dropdown",
+          "label": { "en": "Double-tap sensitivity" },
+          "value": "medium",
+          "values": [
+            { "id": "low", "label": { "en": "Low" } },
+            { "id": "medium", "label": { "en": "Medium" } },
+            { "id": "high", "label": { "en": "High" } }
+          ]
+        },
+        {
+          "id": "auto_pause_delay",
+          "type": "number",
+          "label": { "en": "Auto-pause delay (minutes)" },
+          "value": 0,
+          "min": 0,
+          "max": 255
+        },
+        {
+          "id": "blink_interval",
+          "type": "number",
+          "label": { "en": "LED blink interval (seconds)" },
+          "value": 10,
+          "min": 5,
+          "max": 60
+        }
+      ],
+      "pair": [
+        {
+          "id": "list",
+          "name": { "en": "Select TimeFlip 2" },
+          "hint": { "en": "Select your TimeFlip 2 from the list" }
+        }
+      ],
+      "ble": {
+        "serviceUuid": "f1196f50-71a4-11e6-bdf4-0800200c9a66",
+        "deviceName": "TimeFlip"
+      }
+    }
+  ],
+  "flows": {
+    "triggers": [
+      {
+        "id": "facet_changed",
+        "title": { "en": "TimeFlip facet changed" },
+        "tokens": [
+          { "id": "facet", "type": "number", "title": { "en": "Facet" } },
+          { "id": "facet_name", "type": "string", "title": { "en": "Facet name" } }
+        ]
+      },
+      {
+        "id": "double_tap",
+        "title": { "en": "TimeFlip double-tapped" },
+        "tokens": [
+          { "id": "facet", "type": "number", "title": { "en": "Facet" } },
+          { "id": "facet_name", "type": "string", "title": { "en": "Facet name" } },
+          { "id": "paused", "type": "boolean", "title": { "en": "Paused" } }
+        ]
+      }
+    ],
+    "conditions": [
+      {
+        "id": "facet_is",
+        "title": { "en": "Facet is [facet]" },
+        "args": [
+          { "name": "facet", "type": "dropdown", "values": [
+            { "id": "1", "label": "1" },
+            { "id": "2", "label": "2" },
+            { "id": "3", "label": "3" },
+            { "id": "4", "label": "4" },
+            { "id": "5", "label": "5" },
+            { "id": "6", "label": "6" },
+            { "id": "7", "label": "7" },
+            { "id": "8", "label": "8" },
+            { "id": "9", "label": "9" },
+            { "id": "10", "label": "10" },
+            { "id": "11", "label": "11" },
+            { "id": "12", "label": "12" }
+          ]}
+        ]
+      },
+      {
+        "id": "is_paused",
+        "title": { "en": "Tracking is paused" }
+      },
+      {
+        "id": "is_locked",
+        "title": { "en": "Lock mode is on" }
+      }
+    ],
+    "actions": [
+      {
+        "id": "set_pause",
+        "title": { "en": "Set pause mode" },
+        "args": [
+          { "name": "value", "type": "dropdown", "values": [
+            { "id": "on", "label": "On" },
+            { "id": "off", "label": "Off" }
+          ]}
+        ]
+      },
+      {
+        "id": "set_lock",
+        "title": { "en": "Set lock mode" },
+        "args": [
+          { "name": "value", "type": "dropdown", "values": [
+            { "id": "on", "label": "On" },
+            { "id": "off", "label": "Off" }
+          ]}
+        ]
+      },
+      {
+        "id": "set_auto_pause",
+        "title": { "en": "Set auto-pause delay" },
+        "args": [
+          { "name": "minutes", "type": "number", "min": 0, "max": 255 }
+        ]
+      },
+      {
+        "id": "sync_time",
+        "title": { "en": "Sync device time" }
+      }
+    ]
+  },
+  "capabilities": {
+    "timeflip:facet": {
+      "type": "number",
+      "title": { "en": "Current facet" },
+      "getable": true,
+      "setable": false
+    },
+    "timeflip:facet_name": {
+      "type": "string",
+      "title": { "en": "Facet name" },
+      "getable": true,
+      "setable": false
+    }
+  },
+  "insights": {
+    "loggers": [
+      { "id": "facet_1_daily_minutes", "title": { "en": "Facet 1 (minutes)" }, "type": "number", "units": "min" },
+      { "id": "facet_2_daily_minutes", "title": { "en": "Facet 2 (minutes)" }, "type": "number", "units": "min" },
+      { "id": "facet_3_daily_minutes", "title": { "en": "Facet 3 (minutes)" }, "type": "number", "units": "min" },
+      { "id": "facet_4_daily_minutes", "title": { "en": "Facet 4 (minutes)" }, "type": "number", "units": "min" },
+      { "id": "facet_5_daily_minutes", "title": { "en": "Facet 5 (minutes)" }, "type": "number", "units": "min" },
+      { "id": "facet_6_daily_minutes", "title": { "en": "Facet 6 (minutes)" }, "type": "number", "units": "min" },
+      { "id": "facet_7_daily_minutes", "title": { "en": "Facet 7 (minutes)" }, "type": "number", "units": "min" },
+      { "id": "facet_8_daily_minutes", "title": { "en": "Facet 8 (minutes)" }, "type": "number", "units": "min" },
+      { "id": "facet_9_daily_minutes", "title": { "en": "Facet 9 (minutes)" }, "type": "number", "units": "min" },
+      { "id": "facet_10_daily_minutes", "title": { "en": "Facet 10 (minutes)" }, "type": "number", "units": "min" },
+      { "id": "facet_11_daily_minutes", "title": { "en": "Facet 11 (minutes)" }, "type": "number", "units": "min" },
+      { "id": "facet_12_daily_minutes", "title": { "en": "Facet 12 (minutes)" }, "type": "number", "units": "min" }
+    ]
   }
 }
