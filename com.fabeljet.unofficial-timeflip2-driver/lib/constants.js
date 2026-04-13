@@ -38,9 +38,15 @@ const PASSWORD_WRONG = 0x02;
 
 // Double-tap sensitivity presets
 const DOUBLE_TAP_PRESETS = {
-  low: { threshold: 0x30, limit: 0x10, latency: 0x20, window: 0xFF },
-  medium: { threshold: 0x20, limit: 0x10, latency: 0x20, window: 0xFF },
-  high: { threshold: 0x10, limit: 0x08, latency: 0x10, window: 0xFF },
+  low: {
+    threshold: 0x30, limit: 0x10, latency: 0x20, window: 0xFF,
+  },
+  medium: {
+    threshold: 0x20, limit: 0x10, latency: 0x20, window: 0xFF,
+  },
+  high: {
+    threshold: 0x10, limit: 0x08, latency: 0x10, window: 0xFF,
+  },
 };
 
 // Defaults

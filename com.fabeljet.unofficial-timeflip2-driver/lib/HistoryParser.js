@@ -1,3 +1,5 @@
+'use strict';
+
 const HistoryParser = {
   parse(buffers) {
     const events = [];
@@ -25,13 +27,15 @@ const HistoryParser = {
     return events;
   },
 
-  sumByFacet(events, sinceTimestamp = 0) {
+  sumByFacet(events, sinceTimestamp) {
+    if (typeof sinceTimestamp === 'undefined') sinceTimestamp = 0;
     const totals = {};
     for (let i = 1; i <= 12; i++) {
       totals[i] = 0;
     }
 
-    for (const event of events) {
+    for (let j = 0; j < events.length; j++) {
+      const event = events[j];
       if (event.timestamp >= sinceTimestamp && !event.isPause) {
         if (totals[event.facet] !== undefined) {
           totals[event.facet] += event.durationSeconds;

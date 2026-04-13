@@ -58,10 +58,18 @@ describe('HistoryParser', () => {
   describe('sumByFacet', () => {
     it('sums duration by facet', () => {
       const events = [
-        { facet: 1, timestamp: 1000, durationSeconds: 60, isPause: false },
-        { facet: 2, timestamp: 1000, durationSeconds: 120, isPause: false },
-        { facet: 1, timestamp: 1000, durationSeconds: 30, isPause: false },
-        { facet: 1, timestamp: 1000, durationSeconds: 10, isPause: true },
+        {
+          facet: 1, timestamp: 1000, durationSeconds: 60, isPause: false,
+        },
+        {
+          facet: 2, timestamp: 1000, durationSeconds: 120, isPause: false,
+        },
+        {
+          facet: 1, timestamp: 1000, durationSeconds: 30, isPause: false,
+        },
+        {
+          facet: 1, timestamp: 1000, durationSeconds: 10, isPause: true,
+        },
       ];
       const result = HistoryParser.sumByFacet(events);
 
@@ -71,8 +79,12 @@ describe('HistoryParser', () => {
 
     it('filters by sinceTimestamp', () => {
       const events = [
-        { facet: 1, timestamp: 500, durationSeconds: 100, isPause: false },
-        { facet: 1, timestamp: 1500, durationSeconds: 200, isPause: false },
+        {
+          facet: 1, timestamp: 500, durationSeconds: 100, isPause: false,
+        },
+        {
+          facet: 1, timestamp: 1500, durationSeconds: 200, isPause: false,
+        },
       ];
       const result = HistoryParser.sumByFacet(events, 1000);
 

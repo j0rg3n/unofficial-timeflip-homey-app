@@ -16,7 +16,7 @@ describe('InsightsAccumulator', () => {
 
       const totals = acc.getDailyTotals();
       assert.strictEqual(totals[1], 10); // 600 sec = 10 min
-      assert.strictEqual(totals[5], 5);  // 300 sec = 5 min
+      assert.strictEqual(totals[5], 5); // 300 sec = 5 min
     });
 
     it('ignores pause events', () => {

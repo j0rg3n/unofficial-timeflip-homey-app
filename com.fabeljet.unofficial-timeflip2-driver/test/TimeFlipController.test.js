@@ -1,4 +1,6 @@
-const { describe, it, beforeEach, afterEach } = require('node:test');
+const {
+  describe, it, beforeEach, afterEach,
+} = require('node:test');
 const assert = require('node:assert');
 const TimeFlipController = require('../lib/TimeFlipController');
 const MockBleClient = require('./mocks/MockBleClient');
@@ -52,7 +54,9 @@ describe('TimeFlipController', () => {
       controller.onSettings({ facet_1_label: 'Work', facet_5_label: 'Meeting' });
 
       let event = null;
-      controller.on('facet_changed', (e) => { event = e; });
+      controller.on('facet_changed', (e) => {
+        event = e;
+      });
 
       mock.simulateFacetChange(5);
 
@@ -64,7 +68,9 @@ describe('TimeFlipController', () => {
       await controller.start();
 
       let event = null;
-      controller.on('double_tap', (e) => { event = e; });
+      controller.on('double_tap', (e) => {
+        event = e;
+      });
 
       mock.simulateDoubleTap(3, true);
 
@@ -74,9 +80,11 @@ describe('TimeFlipController', () => {
 
     it('emits battery_updated on start', async () => {
       mock.setBatteryLevel(85);
-      
+
       let level = null;
-      controller.on('battery_updated', (l) => { level = l; });
+      controller.on('battery_updated', (l) => {
+        level = l;
+      });
 
       await controller.start();
 
@@ -103,7 +111,9 @@ describe('TimeFlipController', () => {
       await controller.start();
 
       let paused = null;
-      controller.on('pause_changed', (p) => { paused = p; });
+      controller.on('pause_changed', (p) => {
+        paused = p;
+      });
 
       await controller.setPause(true);
       assert.strictEqual(paused, true);

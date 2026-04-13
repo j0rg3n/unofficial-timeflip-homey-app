@@ -14,9 +14,9 @@ class TimeFlipDriver extends Homey.Driver {
       const peripherals = await this.homey.ble.find();
 
       for (const peripheral of Object.values(peripherals)) {
-        const advertisement = peripheral.advertisement;
+        const { advertisement } = peripheral;
         const localName = advertisement.localName || '';
-        
+
         if (localName.includes('TimeFlip')) {
           devices.push({
             name: peripheral.localName || 'TimeFlip 2',

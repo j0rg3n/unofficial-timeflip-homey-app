@@ -1,3 +1,5 @@
+'use strict';
+
 const {
   SERVICE_UUID,
   CHAR_FACETS,
@@ -6,7 +8,6 @@ const {
   CHAR_DOUBLE_TAP,
   CHAR_PASSWORD,
   CHAR_HISTORY,
-  DEFAULT_PASSWORD,
 } = require('./constants');
 
 class TimeFlipClient {
@@ -84,12 +85,10 @@ class TimeFlipClient {
     await this.charHistory.write(startBytes, false);
 
     const events = [];
-    let done = false;
 
     await this.charHistory.enableNotify();
     this.charHistory.on('data', (data) => {
       if (data[0] === 0xFF && data[1] === 0xFF && data[2] === 0xFF && data[3] === 0xFF) {
-        done = true;
         return;
       }
       events.push(data);

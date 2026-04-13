@@ -1,3 +1,5 @@
+'use strict';
+
 const { EventEmitter } = require('events');
 const HistoryParser = require('./HistoryParser');
 const InsightsAccumulator = require('./InsightsAccumulator');
@@ -11,6 +13,13 @@ const {
   DEFAULT_BLINK_INTERVAL,
   DEFAULT_DOUBLE_TAP_SENSITIVITY,
 } = require('./constants');
+
+function _uint64LE(num) {
+  const buf = Buffer.alloc(8);
+  buf.writeUInt32LE(num & 0xFFFFFFFF, 0);
+  buf.writeUInt32LE(Math.floor(num / 0x100000000), 4);
+  return Array.prototype.slice.call(buf);
+}
 
 class TimeFlipController extends EventEmitter {
   constructor(client) {
@@ -33,8 +42,13 @@ class TimeFlipController extends EventEmitter {
     this._facetStartTimes = {};
   }
 
-  async start(settings = {}) {
-    this.settings = { ...this.settings, ...settings };
+  async start(settings) {
+    settings = settings || {};
+    this.settings.blePassword = settings.blePassword || DEFAULT_PASSWORD;
+    this.settings.brightness = settings.brightness || DEFAULT_BRIGHTNESS;
+    this.settings.blinkInterval = settings.blinkInterval || DEFAULT_BLINK_INTERVAL;
+    this.settings.doubleTapSensitivity = settings.doubleTapSensitivity || DEFAULT_DOUBLE_TAP_SENSITIVITY;
+    this.settings.autoPauseDelay = settings.autoPauseDelay || 0;
 
     await this.client.connect();
     const pwValid = await this.client.sendPassword(this.settings.blePassword);
@@ -75,10 +89,11 @@ class TimeFlipController extends EventEmitter {
   }
 
   async onSettings(newSettings, oldSettings) {
-    this.settings = { ...this.settings, ...newSettings };
-
-    if (newSettings.blePassword && newSettings.blePassword !== oldSettings?.blePassword) {
-      await this.client.sendPassword(newSettings.blePassword);
+    if (newSettings.blePassword) {
+      this.settings.blePassword = newSettings.blePassword;
+      if (!oldSettings || newSettings.blePassword !== oldSettings.blePassword) {
+        await this.client.sendPassword(newSettings.blePassword);
+      }
     }
 
     this._facetLabels = {};
@@ -93,13 +108,13 @@ class TimeFlipController extends EventEmitter {
   _onFacetChange(facet) {
     if (facet === 0) return;
 
-    const prevFacet = this._currentFacet;
     this._currentFacet = facet;
     this._facetStartTimes[facet] = Math.floor(Date.now() / 1000);
 
+    const facetName = this._facetLabels[facet] || (`Facet ${facet}`);
     this.emit('facet_changed', {
       facet,
-      facetName: this._facetLabels[facet] || `Facet ${facet}`,
+      facetName,
     });
 
     this.insights.setActiveFacet(facet, this._facetStartTimes[facet]);
@@ -108,9 +123,10 @@ class TimeFlipController extends EventEmitter {
 
   _onDoubleTap(facet, paused) {
     this._isPaused = paused;
+    const facetName = this._facetLabels[facet] || (`Facet ${facet}`);
     this.emit('double_tap', {
       facet,
-      facetName: this._facetLabels[facet] || `Facet ${facet}`,
+      facetName,
       paused,
     });
     this.emit('pause_changed', paused);
@@ -164,12 +180,6 @@ class TimeFlipController extends EventEmitter {
   isLocked() {
     return this._isLocked;
   }
-}
-
-function _uint64LE(num) {
-  const buf = Buffer.alloc(8);
-  buf.writeBigInt64LE(BigInt(num), 0);
-  return [...buf];
 }
 
 module.exports = TimeFlipController;

@@ -1,3 +1,5 @@
+'use strict';
+
 class InsightsAccumulator {
   constructor() {
     this._dailyTotals = {};
@@ -11,8 +13,8 @@ class InsightsAccumulator {
   }
 
   ingestHistory(parsedEvents) {
-    const now = Date.now();
-    for (const event of parsedEvents) {
+    for (let i = 0; i < parsedEvents.length; i++) {
+      const event = parsedEvents[i];
       if (event.isPause) continue;
       if (event.facet >= 1 && event.facet <= 12) {
         this._dailyTotals[event.facet] += event.durationSeconds;
@@ -26,7 +28,11 @@ class InsightsAccumulator {
   }
 
   getDailyTotals() {
-    const totals = { ...this._dailyTotals };
+    const totals = {};
+    const keys = Object.keys(this._dailyTotals);
+    for (let i = 0; i < keys.length; i++) {
+      totals[keys[i]] = this._dailyTotals[keys[i]];
+    }
 
     if (this._activeFacet && this._activeFacetStart) {
       const elapsed = Math.floor((Date.now() - this._activeFacetStart) / 1000);
