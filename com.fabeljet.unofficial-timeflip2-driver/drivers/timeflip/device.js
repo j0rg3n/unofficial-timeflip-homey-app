@@ -92,6 +92,11 @@ class TimeFlipDevice extends Homey.Device {
       doubleTapSensitivity: doubleTapSensitivity,
     });
 
+    this._controller.on('disconnected', () => {
+      this.log('Device disconnected, attempting reconnect...');
+      this._attemptReconnect(0).catch((err) => this.error(err));
+    });
+
     this._controller.on('facet_changed', (data) => {
       const tokens = { facet: data.facet, facet_name: data.facetName };
       this.setCapabilityValue('timeflip:facet', data.facet).catch((err) => this.error(err));
@@ -137,15 +142,64 @@ class TimeFlipDevice extends Homey.Device {
         }
       }
     }, 15 * 60 * 1000);
+
+    this._scheduleMidnightRollover();
+  }
+
+  _scheduleMidnightRollover() {
+    const now = new Date();
+    const midnight = new Date(now);
+    midnight.setDate(midnight.getDate() + 1);
+    midnight.setHours(0, 0, 0, 0);
+    const msUntilMidnight = midnight.getTime() - now.getTime();
+
+    this._midnightTimeout = setTimeout(() => {
+      if (this._controller) {
+        this._controller.insights.resetDay();
+      }
+      this._scheduleMidnightRollover();
+    }, msUntilMidnight);
   }
 
   async onDisconnect() {
     if (this._insightsUpdateInterval) {
       clearInterval(this._insightsUpdateInterval);
     }
+    if (this._midnightTimeout) {
+      clearTimeout(this._midnightTimeout);
+    }
+    if (this._reconnectTimeout) {
+      clearTimeout(this._reconnectTimeout);
+    }
     if (this._controller) {
       await this._controller.stop();
     }
+  }
+
+  async onRepair(oldSettings) {
+    await this.onDisconnect();
+    await this._attemptReconnect(0);
+  }
+
+  async _attemptReconnect(attempt) {
+    const maxAttempts = 5;
+    const baseDelay = 1000;
+
+    if (attempt >= maxAttempts) {
+      this.log('Max reconnect attempts reached');
+      return;
+    }
+
+    const delay = baseDelay * (2 ** attempt);
+    this._reconnectTimeout = setTimeout(async () => {
+      try {
+        await this.onConnect();
+        this.log('Reconnected successfully');
+      } catch (err) {
+        this.log('Reconnect failed:', err.message);
+        await this._attemptReconnect(attempt + 1);
+      }
+    }, delay);
   }
 
   async onSettings(oldSettings, newSettings) {

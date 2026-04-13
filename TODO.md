@@ -54,7 +54,7 @@ Work items grouped by dependency order. Complete groups in order.
 
 - [x] Implement connect flow with password auth per SPEC §11
 - [x] Implement reconnect with history catch-up per SPEC §11
-- [ ] Implement disconnect handling and scheduled reconnect with backoff
+- [x] Implement disconnect handling and scheduled reconnect with backoff
 - [x] Implement Insights writes during live session per SPEC §11
 
 ---
@@ -66,4 +66,4 @@ Work items grouped by dependency order. Complete groups in order.
 - [x] Implement onoff capability mapping to pause per SPEC §8
 - [x] Implement locked capability per SPEC §8
 - [x] Create per-facet daily_minutes insight logs per SPEC §8
-- [ ] Implement day rollover at midnight per SPEC §11
+- [x] Implement day rollover at midnight per SPEC §11
