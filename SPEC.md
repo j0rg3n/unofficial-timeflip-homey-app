@@ -254,8 +254,8 @@ mock.setBatteryLevel(level)
 
 | Capability ID | Type | Notes |
 |---|---|---|
-| `facet` | number (1–12) | Currently active facet, shown on device tile |
-| `facet_name` | string | Label from device settings for current facet |
+| `timeflip_facet` | number (1–12) | Currently active facet |
+| `timeflip_facet_name` | string | Label from device settings for current facet |
 
 ### Insights logs (one per facet)
 
@@ -423,6 +423,48 @@ const HISTORY_END        = [0xFF, 0xFF, 0xFF, 0xFF];
   "permissions": ["homey:wireless:ble"]
 }
 ```
+
+---
+
+## Implementation Notes & Learnings
+
+### Custom Capabilities
+
+Custom capabilities must be defined in `.homeycompose/capabilities/<capabilityId>.json`:
+
+```json
+{
+  "type": "number",
+  "title": { "en": "Current facet" },
+  "getable": true,
+  "setable": false,
+  "min": 1,
+  "max": 12,
+  "step": 1
+}
+```
+
+Then reference them in `drivers/<driver>/driver.compose.json` capabilities array.
+
+### Valid Driver Classes
+
+Valid values for driver `class`: `socket`, `light`, `lock`, `thermostat`, `camera`, `speaker`, `other`, etc. Use `"other"` for generic devices.
+
+### Setting Types
+
+Use `"text"` not `"string"` for text settings in `.homeycompose` or `driver.compose.json`.
+
+### Dropdown Values
+
+Dropdown values must be defined inline in `driver.compose.json`, not in `.homeycompose/app.json` driver settings.
+
+### Pairing
+
+Driver with `pair: [{ id: "list" }]` requires `drivers/<driver>/pair/list.html` to exist (even if empty).
+
+### setInterval/setTimeout
+
+Allowed in `device.js` for periodic updates and reconnect logic despite ESLint warnings — necessary for Homey.
 
 ---
 

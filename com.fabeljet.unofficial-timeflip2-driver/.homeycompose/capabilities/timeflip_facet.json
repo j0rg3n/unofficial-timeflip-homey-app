@@ -1,0 +1,9 @@
+{
+  "type": "number",
+  "title": { "en": "Current facet" },
+  "getable": true,
+  "setable": false,
+  "min": 1,
+  "max": 12,
+  "step": 1
+}

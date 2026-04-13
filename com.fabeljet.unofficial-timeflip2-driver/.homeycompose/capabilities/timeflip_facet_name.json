@@ -1,0 +1,6 @@
+{
+  "type": "string",
+  "title": { "en": "Facet name" },
+  "getable": true,
+  "setable": false
+}

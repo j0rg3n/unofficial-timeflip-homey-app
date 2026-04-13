@@ -46,7 +46,7 @@
       "settings": [
         {
           "id": "ble_password",
-          "type": "string",
+          "type": "text",
           "label": { "en": "BLE Password" },
           "value": "000000",
           "hint": { "en": "6-digit password" }

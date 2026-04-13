@@ -19,7 +19,7 @@ class TimeFlipApp extends Homey.App {
 
     const facetIsCondition = this.homey.flow.getConditionCard('facet_is');
     facetIsCondition.registerRunListener(async (args, state) => {
-      return state.device.getCapabilityValue('timeflip:facet') === parseInt(args.facet, 10);
+      return state.device.getCapabilityValue('timeflip_facet') === parseInt(args.facet, 10);
     });
 
     const isPausedCondition = this.homey.flow.getConditionCard('is_paused');

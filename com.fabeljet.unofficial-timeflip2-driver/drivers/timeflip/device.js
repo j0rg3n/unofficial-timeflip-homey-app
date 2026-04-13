@@ -99,8 +99,8 @@ class TimeFlipDevice extends Homey.Device {
 
     this._controller.on('facet_changed', (data) => {
       const tokens = { facet: data.facet, facet_name: data.facetName };
-      this.setCapabilityValue('timeflip:facet', data.facet).catch((err) => this.error(err));
-      this.setCapabilityValue('timeflip:facet_name', data.facetName).catch((err) => this.error(err));
+      this.setCapabilityValue('timeflip_facet', data.facet).catch((err) => this.error(err));
+      this.setCapabilityValue('timeflip_facet_name', data.facetName).catch((err) => this.error(err));
       this.setCapabilityValue('onoff', true).catch((err) => this.error(err));
       this.homey.app.emit('trigger:facet_changed', { device: this, tokens: tokens });
     });
