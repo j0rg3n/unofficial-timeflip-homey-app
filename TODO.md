@@ -9,7 +9,7 @@ Work items grouped by dependency order. Complete groups in order.
 - [x] Create constants.js with all UUIDs and command bytes per SPEC §12
 - [x] Create TimeFlipClient.js BLE wrapper implementing SPEC §6 interface
 - [x] Create MockBleClient for tests implementing SPEC §9 interface
-- [ ] Write tests for TimeFlipClient using MockBleClient
+- [x] Write tests for TimeFlipClient using MockBleClient
 
 ---
 
@@ -18,7 +18,7 @@ Work items grouped by dependency order. Complete groups in order.
 - [x] Create HistoryParser.js with parse() and sumByFacet() per SPEC §7
 - [x] Create InsightsAccumulator.js with daily tracking per SPEC §7
 - [x] Create TimeFlipController.js orchestrating client + insights per SPEC §6 interface
-- [ ] Write tests for HistoryParser, InsightsAccumulator, TimeFlipController (>80% coverage)
+- [x] Write tests for HistoryParser, InsightsAccumulator, TimeFlipController (>80% coverage)
 
 ---
 
