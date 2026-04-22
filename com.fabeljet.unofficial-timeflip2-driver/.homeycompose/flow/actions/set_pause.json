@@ -1,0 +1,15 @@
+{
+  "title": {
+    "en": "Set pause mode"
+  },
+  "args": [
+    {
+      "name": "value",
+      "type": "dropdown",
+      "values": [
+        { "id": "on", "label": { "en": "On" } },
+        { "id": "off", "label": { "en": "Off" } }
+      ]
+    }
+  ]
+}

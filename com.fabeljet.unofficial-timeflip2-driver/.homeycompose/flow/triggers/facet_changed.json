@@ -1,0 +1,21 @@
+{
+  "title": {
+    "en": "TimeFlip facet changed"
+  },
+  "tokens": [
+    {
+      "name": "facet",
+      "type": "number",
+      "title": {
+        "en": "Facet"
+      }
+    },
+    {
+      "name": "facet_name",
+      "type": "string",
+      "title": {
+        "en": "Facet name"
+      }
+    }
+  ]
+}

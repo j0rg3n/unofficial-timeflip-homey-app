@@ -466,6 +466,25 @@ Driver with `pair: [{ id: "list" }]` requires `drivers/<driver>/pair/list.html` 
 
 Allowed in `device.js` for periodic updates and reconnect logic despite ESLint warnings — necessary for Homey.
 
+### Flow Cards
+
+Flow cards must be defined as individual JSON files in `.homeycompose/flow/`:
+- `.homeycompose/flow/triggers/<id>.json`
+- `.homeycompose/flow/conditions/<id>.json`
+- `.homeycompose/flow/actions/<id>.json`
+
+**Do NOT** use `flows` (plural) in `.homeycompose/app.json` — SDK v3 expects `flow` (singular) structure which is generated from individual files.
+
+Token definitions use `name` not `id`:
+```json
+{
+  "title": { "en": "TimeFlip facet changed" },
+  "tokens": [
+    { "name": "facet", "type": "number", "title": { "en": "Facet" } }
+  ]
+}
+```
+
 ### Publish Requirements (for App Store)
 
 These are required when publishing but validated only at `publish` level (not `debug`):

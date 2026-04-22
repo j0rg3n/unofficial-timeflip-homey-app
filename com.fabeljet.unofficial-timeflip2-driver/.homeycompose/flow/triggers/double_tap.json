@@ -1,0 +1,28 @@
+{
+  "title": {
+    "en": "TimeFlip double-tapped"
+  },
+  "tokens": [
+    {
+      "name": "facet",
+      "type": "number",
+      "title": {
+        "en": "Facet"
+      }
+    },
+    {
+      "name": "facet_name",
+      "type": "string",
+      "title": {
+        "en": "Facet name"
+      }
+    },
+    {
+      "name": "paused",
+      "type": "boolean",
+      "title": {
+        "en": "Paused"
+      }
+    }
+  ]
+}

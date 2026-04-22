@@ -1,0 +1,13 @@
+{
+  "title": {
+    "en": "Set auto-pause delay"
+  },
+  "args": [
+    {
+      "name": "minutes",
+      "type": "number",
+      "min": 0,
+      "max": 255
+    }
+  ]
+}
