@@ -1,6 +1,10 @@
 {
   "id": "timeflip",
   "name": { "en": "TimeFlip 2" },
+  "images": {
+    "small": "/drivers/timeflip/assets/images/small.png",
+    "large": "/drivers/timeflip/assets/images/large.png"
+  },
   "class": "other",
   "capabilities": [
     "measure_battery",
@@ -25,5 +29,8 @@
   "ble": {
     "serviceUuid": "f1196f50-71a4-11e6-bdf4-0800200c9a66",
     "deviceName": "TimeFlip"
+  },
+  "energy": {
+    "batteries": ["AA", "AA"]
   }
 }

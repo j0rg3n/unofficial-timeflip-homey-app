@@ -466,6 +466,29 @@ Driver with `pair: [{ id: "list" }]` requires `drivers/<driver>/pair/list.html` 
 
 Allowed in `device.js` for periodic updates and reconnect logic despite ESLint warnings — necessary for Homey.
 
+### Publish Requirements (for App Store)
+
+These are required when publishing but validated only at `publish` level (not `debug`):
+
+- **Driver images** (`.driver.compose.json`):
+  ```json
+  "images": {
+    "small": "/drivers/timeflip/assets/images/small.png",
+    "large": "/drivers/timeflip/assets/images/large.png"
+  }
+  ```
+  - `small.png`: 75x75 pixels, PNG format
+  - `large.png`: 75x75 pixels, PNG format
+  - Driver icons should be clean and simple (solid color + shape)
+
+- **Energy config** (required when using `measure_battery`):
+  ```json
+  "energy": {
+    "batteries": ["AA", "AA"]
+  }
+  ```
+  TimeFlip 2 uses two AA batteries.
+
 ---
 
 ## Testing Notes
