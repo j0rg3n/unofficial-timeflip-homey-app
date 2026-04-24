@@ -67,11 +67,7 @@ class TimeFlipController extends EventEmitter {
       this._onFacetChange(facet);
     });
 
-    // Read initial facet AFTER subscribing - subscription already fired by now
-    const initialFacet = await this.client.readFacet();
-    if (initialFacet > 0) {
-      this._onFacetChange(initialFacet);
-    }
+    // No need to read explicitly - subscription fires immediately with current facet
 
     await this.client.subscribeToDoubleTap((facet, paused) => {
       this._onDoubleTap(facet, paused);
