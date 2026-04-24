@@ -73,8 +73,9 @@ describe('TimeFlipDevice integration', () => {
       await controller.start({ blePassword: '000000' });
       await controller.onSettings(newSettings, {});
 
+      await new Promise((resolve) => setTimeout(resolve, 250));
       mockBle.simulateFacetChange(5);
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       assert.strictEqual(controller.getCurrentFacet(), 5);
     });
