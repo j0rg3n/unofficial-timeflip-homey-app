@@ -1,0 +1,14 @@
+{
+  "id": "set_brightness",
+  "title": {
+    "en": "Set LED brightness"
+  },
+  "args": [
+    {
+      "name": "brightness",
+      "type": "number",
+      "min": 0,
+      "max": 100
+    }
+  ]
+}
