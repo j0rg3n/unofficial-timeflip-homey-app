@@ -89,6 +89,15 @@ class TimeFlipDevice extends Homey.Device {
         const result = await peripheral.read(CLIENT_SERVICE, CHAR_RESULT);
         return result[0] === 0x01;
       },
+      async readFacet() {
+        const services = await peripheral.discoverServices([]);
+        const tfSvc = services.find(s => s.uuid.includes('f1196f50'));
+        if (!tfSvc) throw new Error('TimeFlip service not found');
+        const chars = await tfSvc.discoverCharacteristics([CHAR_FACET]);
+        if (!chars || !chars[0]) return 1;
+        const data = await chars[0].read();
+        return data ? data[0] : 1;
+      },
       async subscribeToFacets(cb) {
         const services = await peripheral.discoverServices([]);
         const tfSvc = services.find(s => s.uuid.includes('f1196f50'));

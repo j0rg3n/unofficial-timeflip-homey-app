@@ -67,6 +67,11 @@ class TimeFlipController extends EventEmitter {
       this._onFacetChange(facet);
     });
 
+    const initialFacet = await this.client.readFacet();
+    if (initialFacet) {
+      this._onFacetChange(initialFacet);
+    }
+
     await this.client.subscribeToDoubleTap((facet, paused) => {
       this._onDoubleTap(facet, paused);
     });
