@@ -28,3 +28,25 @@ Read this before making changes to this codebase.
 
 ---
 
+## Flow Cards
+
+Flow cards are defined as **separate JSON files** in `.homeycompose/flow/`, not in app.json:
+
+```
+.homeycompose/flow/
+├── actions/
+│   ├── set_pause.json
+│   └── set_brightness.json    # Add new action here
+├── conditions/
+│   └── facet_is.json
+└── triggers/
+    └── facet_changed.json
+```
+
+Each JSON file contains the card definition (id, title, args). The app.json is auto-generated from these files.
+
+When adding a new flow card:
+1. Create `.homeycompose/flow/<type>/<card_id>.json`
+2. Register it in `app.js` with `this.homey.flow.getActionCard('<card_id>')`
+3. Run `homey app validate` to verify
+
