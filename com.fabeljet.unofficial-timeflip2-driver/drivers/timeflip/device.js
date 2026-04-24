@@ -152,19 +152,11 @@ class TimeFlipDevice extends Homey.Device {
     });
 
     this._controller.on('facet_changed', (data) => {
-      if (!data) {
-        this.log('facet_changed: no data');
-        return;
-      }
-      this.log('DEBUG facet_changed data:', JSON.stringify(data));
+      if (!data) return;
       const facetNum = parseInt(data.facet, 10);
-      if (isNaN(facetNum)) {
-        this.log('facet_changed: invalid facet', data);
-        return;
-      }
+      if (isNaN(facetNum)) return;
       const facetName = String(data.facetName || `Facet ${facetNum}`);
       const tokens = { facet: facetNum, facet_name: facetName };
-      this.log('DEBUG emitting facet_changed with tokens:', JSON.stringify(tokens));
       this.setCapabilityValue('timeflip_facet', facetNum).catch((err) => this.error(err));
       this.setCapabilityValue('timeflip_facet_name', facetName).catch((err) => this.error(err));
       this.setCapabilityValue('onoff', true).catch((err) => this.error(err));
@@ -172,15 +164,9 @@ class TimeFlipDevice extends Homey.Device {
     });
 
     this._controller.on('double_tap', (data) => {
-      if (!data) {
-        this.log('double_tap: no data');
-        return;
-      }
+      if (!data) return;
       const facetNum = parseInt(data.facet, 10);
-      if (isNaN(facetNum)) {
-        this.log('double_tap: invalid facet', data);
-        return;
-      }
+      if (isNaN(facetNum)) return;
       const facetName = String(data.facetName || `Facet ${facetNum}`);
       const tokens = { facet: facetNum, facet_name: facetName, paused: Boolean(data.paused) };
       this.setCapabilityValue('onoff', !data.paused).catch((err) => this.error(err));
@@ -200,33 +186,25 @@ class TimeFlipDevice extends Homey.Device {
     });
 
     this._controller.on('insights_updated', (totals) => {
-      try {
-        if (!this.homey || !this.homey.insight) return;
-        for (let i = 1; i <= 12; i++) {
-          const loggerId = 'facet_' + i + '_daily_minutes';
-          const logger = this.homey.insight.getLoggers()[loggerId];
-          if (logger) {
-            logger.createEntry(totals[i]).catch((err) => this.error(err));
-          }
+      if (!this.homey || !this.homey.insight) return;
+      for (let i = 1; i <= 12; i++) {
+        const loggerId = 'facet_' + i + '_daily_minutes';
+        const logger = this.homey.insight.getLoggers()[loggerId];
+        if (logger) {
+          logger.createEntry(totals[i]).catch((err) => this.error(err));
         }
-      } catch (err) {
-        this.error('insights_updated error:', err.message);
       }
     });
 
     this._insightsUpdateInterval = setInterval(() => {
-      try {
-        if (!this.homey || !this.homey.insight) return;
-        const totals = this._controller.getFacetDailyTotals();
-        for (let i = 1; i <= 12; i++) {
-          const loggerId = 'facet_' + i + '_daily_minutes';
-          const logger = this.homey.insight.getLoggers()[loggerId];
-          if (logger) {
-            logger.createEntry(totals[i]).catch((err) => this.error(err));
-          }
+      if (!this.homey || !this.homey.insight) return;
+      const totals = this._controller.getFacetDailyTotals();
+      for (let i = 1; i <= 12; i++) {
+        const loggerId = 'facet_' + i + '_daily_minutes';
+        const logger = this.homey.insight.getLoggers()[loggerId];
+        if (logger) {
+          logger.createEntry(totals[i]).catch((err) => this.error(err));
         }
-      } catch (err) {
-        this.error('insights interval error:', err.message);
       }
     }, 15 * 60 * 1000);
 

@@ -10,7 +10,6 @@ class TimeFlipApp extends Homey.App {
     const doubleTapTrigger = this.homey.flow.getTriggerCard('double_tap');
 
     this.on('trigger:facet_changed', ({ device, tokens }) => {
-      this.log('facet_changed trigger received:', tokens);
       facetChangedTrigger.trigger(tokens).catch(this.error);
     });
 
