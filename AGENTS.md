@@ -65,3 +65,8 @@ Follow these steps for every change you make:
 
 - Use `this.homey.insight.getLoggers()` NOT `this.homey.app.getInsightLoggers()`
 - Check `this.homey.insight` exists before calling
+
+### Capabilities
+
+- Use `dim` not `light_brightness` for LED brightness control
+- Standard light capabilities: `onoff`, `dim`, `light_hue`, `light_saturation`
