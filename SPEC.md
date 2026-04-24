@@ -198,6 +198,87 @@ getFacetDailyTotals()         // { 1: minutes, ..., 12: minutes }
 getCurrentFacetElapsed()      // minutes elapsed on current facet since last flip
 ```
 
+---
+
+## Homey SDK BLE Usage
+
+### Pairing Flow
+
+The driver uses `ble.discover()` to find TimeFlip. For each advertisement:
+
+```js
+// In drivers/timeflip/driver.js - onPair
+const advertisements = await this.homey.ble.discover();
+for (const [id, adv] of Object.entries(advertisements)) {
+  if (adv.localName?.toLowerCase().includes('timeflip')) {
+    devices.push({
+      name: adv.localName,
+      data: { id: adv.uuid },           // Use advertisement.uuid (not scan id!)
+      store: { peripheralUuid: adv.uuid },
+    });
+  }
+}
+```
+
+**Critical:** Store `advertisement.uuid` — the scan ID from `ble.discover()` (e.g., "5") is different from the peripheral's actual UUID (e.g., "e9edcdaffa14").
+
+### Reconnection
+
+In device.js, use `ble.find()` with the stored peripheral UUID:
+
+```js
+const blePeripheral = await this.homey.ble.find(this.getStore().peripheralUuid);
+```
+
+If `ble.find()` fails (old pairing data), scan and find TimeFlip:
+
+```js
+const advertisements = await this.homey.ble.discover();
+for (const [id, adv] of Object.entries(advertisements)) {
+  if (adv.localName?.toLowerCase().includes('timeflip')) {
+    peripheralUuid = adv.uuid;
+    // Save for next time via repair flow
+  }
+}
+```
+
+### BLE API Notes
+
+- Use `peripheral.discoverServices([])` to get all services (no filter argument)
+- Use `service.discoverCharacteristics([uuid])` — note the plural, takes array
+- Use `subscribeToNotifications(callback)` not `enableNotify()`
+- UUIDs: use **without dashes** for shorthand methods (`peripheral.read(serviceUuid, charUuid)`)
+- Use **with dashes** for discovery (`discoverCharacteristics(['f1196f52-71a4-11e6-bdf4-0800200c9a66'])`)
+
+### Service UUIDs Discovered
+
+| Service | UUID (no dashes) | Purpose |
+|---|---|---|
+| TimeFlip | f1196f5071a411e6bdf40800200c9a66 | Core functionality |
+| Battery | 180f | Battery level |
+| Device Info | 180a | Model/firmware |
+| Unknown | fe59 | Unknown |
+
+### Characteristic UUIDs (no dashes)
+
+| Char | UUID | Properties |
+|---|---|---|
+| Password | f1196f5771a411e6bdf40800200c9a66 | Write |
+| Result | f1196f5371a411e6bdf40800200c9a66 | Read |
+| Facet | f1196f5271a411e6bdf40800200c9a66 | Read, Notify |
+| DoubleTap | f1196f5571a411e6bdf40800200c9a66 | Notify |
+| Cmd | f1196f5471a411e6bdf40800200c9a66 | Read, Write |
+| Battery | 2a19 | Read |
+
+### Connection Lifecycle
+
+1. `ble.find(uuid)` → get advertisement
+2. `advertisement.connect()` → get peripheral
+3. `peripheral.discoverServices([])` → find TimeFlip service
+4. Authenticate: write password to `f1196f57`, read result from `f1196f53`
+5. Subscribe to notifications on `f1196f52` (facet) and `f1196f55` (double-tap)
+6. Listen for `peripheral.on('disconnect', callback)` for reconnection
+
 ### `HistoryParser`
 
 Stateless utility. Input: raw 20-byte notification buffers. Output: structured event objects.
