@@ -112,9 +112,8 @@ All Groups 1-7 complete ✓. Groups 8+ below are remaining work.
 
 ## Bugs
 
-(Add to SPEC.md if missing)
-
-- [ ] Facet and facet name is only updated when device is flipped
+- [x] Facet and facet name shows "-" initially - **Fixed: readFacet() on connect**
+- [x] Turning the dice is spammy (many notifications) - **Fixed: 200ms debounce on UI updates**
 - [ ] Light color, brightness capability not shown in device UI (dim, light_hue, light_saturation)
 - [ ] Pause, lock capabilities not shown in device UI
 - [ ] Facet names not configurable in settings or advanced settings
