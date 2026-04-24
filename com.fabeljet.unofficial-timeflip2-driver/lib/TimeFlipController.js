@@ -8,6 +8,13 @@ const {
   CMD_LOCK_OFF,
   CMD_PAUSE_ON,
   CMD_PAUSE_OFF,
+  CMD_BRIGHTNESS,
+  CMD_BLINK_INTERVAL,
+  CMD_SET_COLOR,
+  CMD_SET_FACET_TASK,
+  CMD_READ_FACET_TASK,
+  CMD_SET_DOUBLE_TAP,
+  CMD_READ_DOUBLE_TAP,
   DEFAULT_PASSWORD,
   DEFAULT_BRIGHTNESS,
   DEFAULT_BLINK_INTERVAL,
@@ -155,6 +162,55 @@ class TimeFlipController extends EventEmitter {
     const nowSec = Math.floor(Date.now() / 1000);
     const cmd = [0x08, ..._uint64LE(nowSec)];
     await this.client.writeCommand(cmd);
+  }
+
+  async setBrightness(brightness) {
+    const cmd = [...CMD_BRIGHTNESS, brightness];
+    await this.client.writeCommand(cmd);
+    this.settings.brightness = brightness;
+  }
+
+  async setLedColor(facet, r, g, b) {
+    const cmd = [...CMD_SET_COLOR, facet, r, g, b];
+    await this.client.writeCommand(cmd);
+  }
+
+  async setBlinkInterval(interval) {
+    const cmd = [...CMD_BLINK_INTERVAL, interval];
+    await this.client.writeCommand(cmd);
+    this.settings.blinkInterval = interval;
+  }
+
+  async setFacetParams(facet, taskId) {
+    const cmd = [...CMD_SET_FACET_TASK, facet, taskId];
+    await this.client.writeCommand(cmd);
+  }
+
+  async getFacetParams(facet) {
+    const cmd = [...CMD_READ_FACET_TASK, facet];
+    await this.client.writeCommand(cmd);
+    return new Promise((resolve) => {
+      this.client.once('facet_params', resolve);
+    });
+  }
+
+  async setDoubleTapParams(params) {
+    const cmd = [
+      ...CMD_SET_DOUBLE_TAP,
+      params.threshold || 0x20,
+      params.limit || 0x10,
+      params.latency || 0x20,
+      params.window || 0xFF,
+    ];
+    await this.client.writeCommand(cmd);
+  }
+
+  async getDoubleTapParams() {
+    const cmd = [...CMD_READ_DOUBLE_TAP];
+    await this.client.writeCommand(cmd);
+    return new Promise((resolve) => {
+      this.client.once('double_tap_params', resolve);
+    });
   }
 
   getFacetDailyTotals() {

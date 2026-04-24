@@ -72,23 +72,23 @@ All Groups 1-7 complete ✓. Groups 8+ below are remaining work.
 
 ---
 
-## Group 8: Cleanup & Debug Removal
+## Group 8: Cleanup & Debug Removal ✓
 
-- [ ] Remove debug scan code from app.js after pairing verified
-- [ ] Remove debug service discovery code from device.js
-- [ ] Clean up console comments and temporary logging
-- [ ] Add proper onSettings handler for peripheralUuid storage
+- [x] Remove debug scan code from app.js after pairing verified
+- [x] Remove debug service discovery code from device.js
+- [x] Clean up console comments and temporary logging
+- [x] Add proper onSettings handler for peripheralUuid storage
 
 ---
 
-## Group 9: Remaining Controller Methods
+## Group 9: Remaining Controller Methods ✓
 
-- [ ] Implement setBrightness() in TimeFlipController (CMD 0x09)
-- [ ] Implement setLedColor() in TimeFlipController (CMD 0x11)
-- [ ] Implement setBlinkInterval() in TimeFlipController (CMD 0x0A)
-- [ ] Implement setFacetParams() / getFacetParams() (CMD 0x13/0x14)
-- [ ] Implement getDoubleTapParams() / setDoubleTapParams() (CMD 0x16/0x17)
-- [ ] Add tests for new methods (>80% coverage)
+- [x] Implement setBrightness() in TimeFlipController (CMD 0x09)
+- [x] Implement setLedColor() in TimeFlipController (CMD 0x11)
+- [x] Implement setBlinkInterval() in TimeFlipController (CMD 0x0A)
+- [x] Implement setFacetParams() / getFacetParams() (CMD 0x13/0x14)
+- [x] Implement getDoubleTapParams() / setDoubleTapParams() (CMD 0x16/0x17)
+- [x] Add tests for new methods (>80% coverage)
 
 ---
 

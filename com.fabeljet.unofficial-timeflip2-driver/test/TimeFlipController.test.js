@@ -175,4 +175,59 @@ describe('TimeFlipController', () => {
       assert.strictEqual(mock.connected, false);
     });
   });
+
+  describe('setBrightness', () => {
+    it('sends brightness command', async () => {
+      await controller.start();
+      await controller.setBrightness(75);
+
+      const lastCmd = mock.getLastSentCommand();
+      assert.strictEqual(lastCmd.type, 'command');
+      assert.deepStrictEqual(lastCmd.bytes, [0x09, 75]);
+    });
+  });
+
+  describe('setLedColor', () => {
+    it('sends color command with RGB values', async () => {
+      await controller.start();
+      await controller.setLedColor(3, 255, 128, 64);
+
+      const lastCmd = mock.getLastSentCommand();
+      assert.strictEqual(lastCmd.type, 'command');
+      assert.deepStrictEqual(lastCmd.bytes, [0x11, 3, 255, 128, 64]);
+    });
+  });
+
+  describe('setBlinkInterval', () => {
+    it('sends blink interval command', async () => {
+      await controller.start();
+      await controller.setBlinkInterval(5);
+
+      const lastCmd = mock.getLastSentCommand();
+      assert.strictEqual(lastCmd.type, 'command');
+      assert.deepStrictEqual(lastCmd.bytes, [0x0A, 5]);
+    });
+  });
+
+  describe('setFacetParams', () => {
+    it('sends facet task command', async () => {
+      await controller.start();
+      await controller.setFacetParams(7, 42);
+
+      const lastCmd = mock.getLastSentCommand();
+      assert.strictEqual(lastCmd.type, 'command');
+      assert.deepStrictEqual(lastCmd.bytes, [0x13, 7, 42]);
+    });
+  });
+
+  describe('setDoubleTapParams', () => {
+    it('sends double-tap params command', async () => {
+      await controller.start();
+      await controller.setDoubleTapParams({ threshold: 0x15, limit: 0x08 });
+
+      const lastCmd = mock.getLastSentCommand();
+      assert.strictEqual(lastCmd.type, 'command');
+      assert.deepStrictEqual(lastCmd.bytes, [0x16, 0x15, 0x08, 0x20, 0xFF]);
+    });
+  });
 });
