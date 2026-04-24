@@ -536,7 +536,10 @@
         "onoff",
         "locked",
         "timeflip_facet",
-        "timeflip_facet_name"
+        "timeflip_facet_name",
+        "light_hue",
+        "light_saturation",
+        "light_brightness"
       ],
       "settings": [
         {
@@ -597,6 +600,102 @@
           "value": 10,
           "min": 5,
           "max": 60
+        },
+        {
+          "id": "facet_1_label",
+          "type": "text",
+          "label": {
+            "en": "Facet 1 Label"
+          },
+          "value": "Facet 1"
+        },
+        {
+          "id": "facet_2_label",
+          "type": "text",
+          "label": {
+            "en": "Facet 2 Label"
+          },
+          "value": "Facet 2"
+        },
+        {
+          "id": "facet_3_label",
+          "type": "text",
+          "label": {
+            "en": "Facet 3 Label"
+          },
+          "value": "Facet 3"
+        },
+        {
+          "id": "facet_4_label",
+          "type": "text",
+          "label": {
+            "en": "Facet 4 Label"
+          },
+          "value": "Facet 4"
+        },
+        {
+          "id": "facet_5_label",
+          "type": "text",
+          "label": {
+            "en": "Facet 5 Label"
+          },
+          "value": "Facet 5"
+        },
+        {
+          "id": "facet_6_label",
+          "type": "text",
+          "label": {
+            "en": "Facet 6 Label"
+          },
+          "value": "Facet 6"
+        },
+        {
+          "id": "facet_7_label",
+          "type": "text",
+          "label": {
+            "en": "Facet 7 Label"
+          },
+          "value": "Facet 7"
+        },
+        {
+          "id": "facet_8_label",
+          "type": "text",
+          "label": {
+            "en": "Facet 8 Label"
+          },
+          "value": "Facet 8"
+        },
+        {
+          "id": "facet_9_label",
+          "type": "text",
+          "label": {
+            "en": "Facet 9 Label"
+          },
+          "value": "Facet 9"
+        },
+        {
+          "id": "facet_10_label",
+          "type": "text",
+          "label": {
+            "en": "Facet 10 Label"
+          },
+          "value": "Facet 10"
+        },
+        {
+          "id": "facet_11_label",
+          "type": "text",
+          "label": {
+            "en": "Facet 11 Label"
+          },
+          "value": "Facet 11"
+        },
+        {
+          "id": "facet_12_label",
+          "type": "text",
+          "label": {
+            "en": "Facet 12 Label"
+          },
+          "value": "Facet 12"
         }
       ],
       "pair": [
