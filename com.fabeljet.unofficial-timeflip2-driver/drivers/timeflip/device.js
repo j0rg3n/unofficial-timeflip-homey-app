@@ -59,38 +59,11 @@ class TimeFlipDevice extends Homey.Device {
     });
 
     const peripheral = this._blePeripheral;
-    let tfService = null;
     
-    // Debug: discover all services and read characteristics
-    try {
-      const allServices = await peripheral.discoverServices([]);
-      this.log('=== ALL SERVICES ===');
-      for (const svc of allServices) {
-        this.log('Service:', svc.uuid);
-        if (svc.uuid.includes('f1196f50')) {
-          tfService = svc;
-        }
-        const chars = await svc.discoverCharacteristics([]);
-        for (const char of chars) {
-          try {
-            const data = await char.read();
-            this.log('  ', char.uuid, '->', Array.prototype.slice.call(data));
-          } catch (e) {
-            this.log('  ', char.uuid, '-> ERROR:', e.message);
-          }
-        }
-      }
-      this.log('=== END ===');
-    } catch (e) {
-      this.log('Discover error:', e.message);
-    }
-
     const blePassword = this.getSetting('ble_password') || DEFAULT_PASSWORD;
     const doubleTapSensitivity = this.getSetting('double_tap_sensitivity') || 'medium';
-    this.log('Password:', blePassword);
+    this.log('Connecting with password');
 
-    // peripheral is already defined above
-    
     const CLIENT_SERVICE = 'f1196f5071a411e6bdf40800200c9a66';
     const CHAR_PASSWORD = 'f1196f5771a411e6bdf40800200c9a66';
     const CHAR_RESULT = 'f1196f5371a411e6bdf40800200c9a66';
