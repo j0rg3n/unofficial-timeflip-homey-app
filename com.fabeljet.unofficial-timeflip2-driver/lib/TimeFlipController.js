@@ -123,6 +123,8 @@ class TimeFlipController extends EventEmitter {
       return;
     }
 
+    if (this._currentFacet === facet) return;
+
     this._currentFacet = facet;
     this._facetStartTimes[facet] = Math.floor(Date.now() / 1000);
 
