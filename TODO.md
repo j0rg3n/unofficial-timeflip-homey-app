@@ -1,10 +1,12 @@
 # TODO.md — TimeFlip Homey App
 
-Work items grouped by dependency order. Complete groups in order.
+**Status: Most code written, BLE connection working, needs cleanup and remaining features**
+
+All Groups 1-7 complete ✓. Groups 8+ below are remaining work.
 
 ---
 
-## Group 1: Core Infrastructure
+## Group 1: Core Infrastructure ✓
 
 - [x] Create constants.js with all UUIDs and command bytes per SPEC §12
 - [x] Create TimeFlipClient.js BLE wrapper implementing SPEC §6 interface
@@ -13,7 +15,7 @@ Work items grouped by dependency order. Complete groups in order.
 
 ---
 
-## Group 2: Business Logic
+## Group 2: Business Logic ✓
 
 - [x] Create HistoryParser.js with parse() and sumByFacet() per SPEC §7
 - [x] Create InsightsAccumulator.js with daily tracking per SPEC §7
@@ -22,7 +24,7 @@ Work items grouped by dependency order. Complete groups in order.
 
 ---
 
-## Group 3: Homey Integration
+## Group 3: Homey Integration ✓
 
 - [x] Create app/app.json with ble permission and device definition
 - [x] Create drivers/timeflip/driver.js with pairing flow per SPEC §10
@@ -32,7 +34,7 @@ Work items grouped by dependency order. Complete groups in order.
 
 ---
 
-## Group 4: Flow Cards
+## Group 4: Flow Cards ✓
 
 - [x] Implement facet_changed trigger with tokens per SPEC §8
 - [x] Implement double_tap trigger with tokens per SPEC §8
@@ -41,7 +43,7 @@ Work items grouped by dependency order. Complete groups in order.
 
 ---
 
-## Group 5: Device Settings
+## Group 5: Device Settings ✓
 
 - [x] Implement facet label settings (facet_1_label ... facet_12_label) per SPEC §9
 - [x] Implement ble_password setting per SPEC §9
@@ -50,7 +52,7 @@ Work items grouped by dependency order. Complete groups in order.
 
 ---
 
-## Group 6: Connection Lifecycle
+## Group 6: Connection Lifecycle ✓
 
 - [x] Implement connect flow with password auth per SPEC §11
 - [x] Implement reconnect with history catch-up per SPEC §11
@@ -59,7 +61,7 @@ Work items grouped by dependency order. Complete groups in order.
 
 ---
 
-## Group 7: Capabilities & Insights Logs
+## Group 7: Capabilities & Insights Logs ✓
 
 - [x] Implement measure_battery capability per SPEC §8
 - [x] Implement light_hue/saturation/brightness capabilities per SPEC §8
@@ -67,3 +69,55 @@ Work items grouped by dependency order. Complete groups in order.
 - [x] Implement locked capability per SPEC §8
 - [x] Create per-facet daily_minutes insight logs per SPEC §8
 - [x] Implement day rollover at midnight per SPEC §11
+
+---
+
+## Group 8: Cleanup & Debug Removal
+
+- [ ] Remove debug scan code from app.js after pairing verified
+- [ ] Remove debug service discovery code from device.js
+- [ ] Clean up console comments and temporary logging
+- [ ] Add proper onSettings handler for peripheralUuid storage
+
+---
+
+## Group 9: Remaining Controller Methods
+
+- [ ] Implement setBrightness() in TimeFlipController (CMD 0x09)
+- [ ] Implement setLedColor() in TimeFlipController (CMD 0x11)
+- [ ] Implement setBlinkInterval() in TimeFlipController (CMD 0x0A)
+- [ ] Implement setFacetParams() / getFacetParams() (CMD 0x13/0x14)
+- [ ] Implement getDoubleTapParams() / setDoubleTapParams() (CMD 0x16/0x17)
+- [ ] Add tests for new methods (>80% coverage)
+
+---
+
+## Group 10: Additional Flow Cards (Optional)
+
+- [ ] Add brightness action card (LED brightness)
+- [ ] Add color action card (facet LED color)
+- [ ] Add double_tap_sensitivity condition
+- [ ] Add blink_interval action card
+
+---
+
+## Group 11: Edge Cases & Error Handling
+
+- [ ] Handle password auth failure gracefully (show error state)
+- [ ] Handle BLE disconnects during command write
+- [ ] Handle invalid facet values from device
+- [ ] Handle battery read failure
+- [ ] Add device health indicator capability
+
+---
+
+## Group 12: Production Readiness
+
+- [ ] Run `npm run lint` and fix warnings
+- [ ] Run `npm run typecheck` and fix errors
+- [ ] Test on real device with all flow cards
+- [ ] Test pairing workflow (fresh start, repair)
+- [ ] Test reconnection after BLE range loss
+- [ ] Verify battery reporting works
+- [ ] Verify facet change triggers work
+- [ ] Verify double-tap triggers work
