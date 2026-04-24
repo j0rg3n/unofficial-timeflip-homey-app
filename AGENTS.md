@@ -1,4 +1,4 @@
-# CLAUDE.md — TimeFlip / Homey App Rules
+# AGENTS.md — TimeFlip / Homey App Rules
 
 This file contains project-specific rules for the TimeFlip Homey app.
 Read this before making changes to this codebase.
