@@ -191,7 +191,7 @@ class TimeFlipDevice extends Homey.Device {
         const loggerId = 'facet_' + i + '_daily_minutes';
         const logger = this.homey.insight.getLoggers()[loggerId];
         if (logger) {
-          logger.createEntry(totals[i]).catch((err) => this.error(err));
+          logger.createEntry(totals[i]).catch(() => {});
         }
       }
     });
@@ -203,7 +203,7 @@ class TimeFlipDevice extends Homey.Device {
         const loggerId = 'facet_' + i + '_daily_minutes';
         const logger = this.homey.insight.getLoggers()[loggerId];
         if (logger) {
-          logger.createEntry(totals[i]).catch((err) => this.error(err));
+          logger.createEntry(totals[i]).catch(() => {});
         }
       }
     }, 15 * 60 * 1000);

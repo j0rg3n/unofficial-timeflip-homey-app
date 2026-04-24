@@ -1,27 +1,36 @@
-# AGENTS.md — TimeFlip / Homey App Rules
-
-This file contains project-specific rules for the TimeFlip Homey app.
-Read this before making changes to this codebase.
-
----
-
-## SPEC.md Rules
-
-- SPEC.md is the source of truth for interfaces, protocol details, data shapes, and capability mappings.
-- If implementation reveals the SPEC is wrong or incomplete, **update SPEC.md first**, then implement.
-- Do not silently deviate from SPEC — if a spec decision turns out to be impractical, update the spec and note the reason.
-
----
+> This file contains project-specific rules for the TimeFlip Homey app
 
 ## Dev flow
 
-1. Make cohesive, minimal sets of changes
+Follow these steps for every change you make:
 
-2. Run tests and check coverage.
+1. Refresh the todo list first
 
-3. Use `timeout 10 homey app run --remote` to smoke the app.
+2. Make cohesive, minimal sets of changes
 
-4. Commit after completing steps or even substeps in TODO.md. 
+3. Run tests and check coverage.
+
+4. Use `timeout 10 homey app run --remote` to smoke the app.
+
+5. Commit after completing steps or even substeps in TODO.md.
+
+6. Record new learnings: 
+   
+   1. About Homey, the API, or tooling: Goes in AGENTS.md.
+   
+   2. About the final product: Goes in SPEC.md.
+
+## SPEC.md is the goalpost
+
+**Ask the user before changing `SPEC.md`.**
+
+- `TODO.md` has an ordered list of groups of work, each group can be done in parallel
+
+- `TODO.md` is just a reference to `SPEC.md`, where the actual specifications go.
+
+- Do not silently deviate from SPEC — if a spec decision turns out to be impractical, ask the user what to do.
+
+- SPEC.md is the source of truth for UX, interfaces, protocol details, data shapes, and capability mappings.
 
 ## Testing Rules
 
@@ -38,4 +47,21 @@ Read this before making changes to this codebase.
 - E2E tests: `test/e2e/<feature>.spec.js`
 - Mocks: `test/mocks/<MockName>.js`
 
----
+## Key Learnings
+
+### Flow Triggers (SDK v3)
+
+- `getTriggerCard()` returns `FlowCardTrigger` → use `trigger(tokens)` only
+- `getDeviceTriggerCard()` returns `FlowCardTriggerDevice` → use `trigger(device, tokens)`
+- Never pass device to `getTriggerCard().trigger()`
+
+### BLE Events
+
+- `subscribeToNotifications(cb)` callback receives raw Buffer, access bytes with `data[0]`
+- TimeFlip sends facet as single byte (1-12)
+- Add debounce: ignore if `this._currentFacet === facet`
+
+### Insights
+
+- Use `this.homey.insight.getLoggers()` NOT `this.homey.app.getInsightLoggers()`
+- Check `this.homey.insight` exists before calling

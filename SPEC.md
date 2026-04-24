@@ -24,6 +24,7 @@ Homey Pro acts as the **BLE central** (GATT client). TimeFlip 2 is the **BLE per
 ### Device Identification
 
 TimeFlip 2 advertises with service UUID:
+
 ```
 F1196F50-71A4-11E6-BDF4-0800200C9A66
 ```
@@ -32,16 +33,16 @@ F1196F50-71A4-11E6-BDF4-0800200C9A66
 
 All characteristics are under service `F1196F50-71A4-11E6-BDF4-0800200C9A66`.
 
-| Characteristic | UUID | Size | Properties | Purpose |
-|---|---|---|---|---|
-| TimeFlip events data | F1196F51-... | 20 | R, N | Event notifications (ASCII) |
-| Facets | F1196F52-... | 1 | R, N | Current facet ID (1–12), 0 if undefined |
-| Command result output | F1196F53-... | 20 | R | Response to commands |
-| Command | F1196F54-... | 20 | R, W | Write commands (see below) |
-| Double tap | F1196F55-... | 1 | N | Double-tap detected; value encodes facet + pause state |
-| System state | F1196F56-... | 4 | R, N | Calibration/hardware status |
-| Password | F1196F57-... | 6 | W | Must be written on every connect |
-| History data | F1196F58-... | 20 | R, W, N | History read commands and streaming data |
+| Characteristic        | UUID         | Size | Properties | Purpose                                                |
+| --------------------- | ------------ | ---- | ---------- | ------------------------------------------------------ |
+| TimeFlip events data  | F1196F51-... | 20   | R, N       | Event notifications (ASCII)                            |
+| Facets                | F1196F52-... | 1    | R, N       | Current facet ID (1–12), 0 if undefined                |
+| Command result output | F1196F53-... | 20   | R          | Response to commands                                   |
+| Command               | F1196F54-... | 20   | R, W       | Write commands (see below)                             |
+| Double tap            | F1196F55-... | 1    | N          | Double-tap detected; value encodes facet + pause state |
+| System state          | F1196F56-... | 4    | R, N       | Calibration/hardware status                            |
+| Password              | F1196F57-... | 6    | W          | Must be written on every connect                       |
+| History data          | F1196F58-... | 20   | R, W, N    | History read commands and streaming data               |
 
 Use full 128-bit UUIDs throughout (Homey v6+ default).
 
@@ -68,47 +69,51 @@ Must be written to `F1196F57` on **every connect** (the characteristic resets on
 
 **Query commands** (read response from `F1196F53`):
 
-| Command | Bytes | Response |
-|---|---|---|
-| Get device time | `0x07` | `0x07` + uint64 (seconds since 1970) |
-| Status request | `0x10` | `0xXX 0xYY 0xZZ 0xZZ` — lock mode, pause mode, auto-pause delay (min) |
+| Command                | Bytes       | Response                                                                                             |
+| ---------------------- | ----------- | ---------------------------------------------------------------------------------------------------- |
+| Get device time        | `0x07`      | `0x07` + uint64 (seconds since 1970)                                                                 |
+| Status request         | `0x10`      | `0xXX 0xYY 0xZZ 0xZZ` — lock mode, pause mode, auto-pause delay (min)                                |
 | Read facet task params | `0x14 0xNN` | `0x14 0xNN 0xPP 0xTT 0xTT 0xTT 0xTT 0xCC 0xCC 0xCC 0xCC` — facet, mode, timer limit (s), elapsed (s) |
-| Read double-tap params | `0x17` | `0x17 0x3A 0xTH 0x3B 0xLI 0x3C 0xLT 0x3D 0xWD` |
+| Read double-tap params | `0x17`      | `0x17 0x3A 0xTH 0x3B 0xLI 0x3C 0xLT 0x3D 0xWD`                                                       |
 
 **Control commands**:
 
-| Command | Bytes | Notes |
-|---|---|---|
-| Lock mode on | `0x04 0x01` | Freezes tracking on current facet |
-| Lock mode off | `0x04 0x02` | |
-| Auto-pause delay | `0x05 0xXX 0xXX` | Minutes (0 = disabled) |
-| Pause on | `0x06 0x01` | |
-| Pause off | `0x06 0x02` | |
-| Set device time | `0x08` + uint64 | Seconds since 1970 |
-| LED brightness | `0x09 0xXX` | 1–100% |
-| LED blink interval | `0x0A 0xXX` | 5–60 seconds |
-| Set facet color | `0x11 0xNN 0xRR 0xRR 0xGG 0xGG 0xBB 0xBB` | Facet 0–24, RGB 2 bytes each |
-| Set facet task params | `0x13 0xNN 0xPP 0xTT 0xTT 0xTT 0xTT` | Facet, mode (0=simple,1=pomodoro), timer limit (s) |
-| Set device name | `0x15 0xNN 0xZZ...` | NN = char count, max 18 ASCII chars |
-| Set double-tap params | `0x16 0x3A 0xTH 0x3B 0xLI 0x3C 0xLT 0x3D 0xWD` | Threshold, limit, latency, window |
-| Set password | `0x30 0xZZ...` | 6 ASCII chars |
-| Reset task info | `0xFE` | |
-| Factory reset | `0xFF` | Erases all flash — use with extreme care |
+| Command               | Bytes                                          | Notes                                              |
+| --------------------- | ---------------------------------------------- | -------------------------------------------------- |
+| Lock mode on          | `0x04 0x01`                                    | Freezes tracking on current facet                  |
+| Lock mode off         | `0x04 0x02`                                    |                                                    |
+| Auto-pause delay      | `0x05 0xXX 0xXX`                               | Minutes (0 = disabled)                             |
+| Pause on              | `0x06 0x01`                                    |                                                    |
+| Pause off             | `0x06 0x02`                                    |                                                    |
+| Set device time       | `0x08` + uint64                                | Seconds since 1970                                 |
+| LED brightness        | `0x09 0xXX`                                    | 1–100%                                             |
+| LED blink interval    | `0x0A 0xXX`                                    | 5–60 seconds                                       |
+| Set facet color       | `0x11 0xNN 0xRR 0xRR 0xGG 0xGG 0xBB 0xBB`      | Facet 0–24, RGB 2 bytes each                       |
+| Set facet task params | `0x13 0xNN 0xPP 0xTT 0xTT 0xTT 0xTT`           | Facet, mode (0=simple,1=pomodoro), timer limit (s) |
+| Set device name       | `0x15 0xNN 0xZZ...`                            | NN = char count, max 18 ASCII chars                |
+| Set double-tap params | `0x16 0x3A 0xTH 0x3B 0xLI 0x3C 0xLT 0x3D 0xWD` | Threshold, limit, latency, window                  |
+| Set password          | `0x30 0xZZ...`                                 | 6 ASCII chars                                      |
+| Reset task info       | `0xFE`                                         |                                                    |
+| Factory reset         | `0xFF`                                         | Erases all flash — use with extreme care           |
 
 ### History Characteristic (`F1196F58`)
 
 **Read single event:**
+
 ```
 Write: 0x01 0xXX 0xXX 0xXX 0xXX   (event number, or 0xFFFFFFFF for last)
 ```
 
 **Read all history from event N (streaming):**
+
 ```
 Write: 0x02 0xXX 0xXX 0xXX 0xXX   (starting event number)
 ```
+
 Events stream as notifications. Each 20-byte package contains multiple history blocks. Last package is all zeros (end sentinel).
 
 **History block format** (per event):
+
 - N event (4 bytes)
 - Side / facet (1 byte) — if > 127: pause event for facet (Side − 128); if 66: accelerometer error
 - Moment of flip (unix timestamp, 4 bytes)
@@ -252,23 +257,23 @@ for (const [id, adv] of Object.entries(advertisements)) {
 
 ### Service UUIDs Discovered
 
-| Service | UUID (no dashes) | Purpose |
-|---|---|---|
-| TimeFlip | f1196f5071a411e6bdf40800200c9a66 | Core functionality |
-| Battery | 180f | Battery level |
-| Device Info | 180a | Model/firmware |
-| Unknown | fe59 | Unknown |
+| Service     | UUID (no dashes)                 | Purpose            |
+| ----------- | -------------------------------- | ------------------ |
+| TimeFlip    | f1196f5071a411e6bdf40800200c9a66 | Core functionality |
+| Battery     | 180f                             | Battery level      |
+| Device Info | 180a                             | Model/firmware     |
+| Unknown     | fe59                             | Unknown            |
 
 ### Characteristic UUIDs (no dashes)
 
-| Char | UUID | Properties |
-|---|---|---|
-| Password | f1196f5771a411e6bdf40800200c9a66 | Write |
-| Result | f1196f5371a411e6bdf40800200c9a66 | Read |
-| Facet | f1196f5271a411e6bdf40800200c9a66 | Read, Notify |
-| DoubleTap | f1196f5571a411e6bdf40800200c9a66 | Notify |
-| Cmd | f1196f5471a411e6bdf40800200c9a66 | Read, Write |
-| Battery | 2a19 | Read |
+| Char      | UUID                             | Properties   |
+| --------- | -------------------------------- | ------------ |
+| Password  | f1196f5771a411e6bdf40800200c9a66 | Write        |
+| Result    | f1196f5371a411e6bdf40800200c9a66 | Read         |
+| Facet     | f1196f5271a411e6bdf40800200c9a66 | Read, Notify |
+| DoubleTap | f1196f5571a411e6bdf40800200c9a66 | Notify       |
+| Cmd       | f1196f5471a411e6bdf40800200c9a66 | Read, Write  |
+| Battery   | 2a19                             | Read         |
 
 ### Connection Lifecycle
 
@@ -322,21 +327,21 @@ mock.setBatteryLevel(level)
 
 ### Standard capabilities
 
-| Capability | Notes |
-|---|---|
-| `measure_battery` | Polled from battery level characteristic on connect + periodically |
-| `light_hue` | Maps to current active facet's LED color |
-| `light_saturation` | Maps to current active facet's LED color |
-| `light_brightness` | Maps to `0x09` command (global LED brightness) |
-| `onoff` | `true` = tracking active (pause off), `false` = paused. "Turn off" = pause, "Turn on" = resume |
-| `locked` | Lock mode state |
+| Capability         | Notes                                                                                          |
+| ------------------ | ---------------------------------------------------------------------------------------------- |
+| `measure_battery`  | Polled from battery level characteristic on connect + periodically                             |
+| `light_hue`        | Maps to current active facet's LED color                                                       |
+| `light_saturation` | Maps to current active facet's LED color                                                       |
+| `light_brightness` | Maps to `0x09` command (global LED brightness)                                                 |
+| `onoff`            | `true` = tracking active (pause off), `false` = paused. "Turn off" = pause, "Turn on" = resume |
+| `locked`           | Lock mode state                                                                                |
 
 ### Custom capabilities
 
-| Capability ID | Type | Notes |
-|---|---|---|
-| `timeflip_facet` | number (1–12) | Currently active facet |
-| `timeflip_facet_name` | string | Label from device settings for current facet |
+| Capability ID         | Type          | Notes                                        |
+| --------------------- | ------------- | -------------------------------------------- |
+| `timeflip_facet`      | number (1–12) | Currently active facet                       |
+| `timeflip_facet_name` | string        | Label from device settings for current facet |
 
 ### Insights logs (one per facet)
 
@@ -352,30 +357,30 @@ Created as `homey:device:<id>:facet_1_daily_minutes` … `facet_12_daily_minutes
 
 ### Triggers
 
-| ID | Title | Tokens |
-|---|---|---|
-| `facet_changed` | TimeFlip facet changed | `facet` (number), `facet_name` (string) |
-| `double_tap` | TimeFlip double-tapped | `facet` (number), `facet_name` (string), `paused` (boolean) |
-| Standard light triggers | From `light_hue`, `light_brightness`, `onoff` capabilities | — |
+| ID                      | Title                                                      | Tokens                                                      |
+| ----------------------- | ---------------------------------------------------------- | ----------------------------------------------------------- |
+| `facet_changed`         | TimeFlip facet changed                                     | `facet` (number), `facet_name` (string)                     |
+| `double_tap`            | TimeFlip double-tapped                                     | `facet` (number), `facet_name` (string), `paused` (boolean) |
+| Standard light triggers | From `light_hue`, `light_brightness`, `onoff` capabilities | —                                                           |
 
 ### Conditions
 
-| ID | Title |
-|---|---|
-| `facet_is` | Facet is [facet selector 1–12] |
-| `is_paused` | Tracking is paused (from `onoff` capability) |
-| `is_locked` | Lock mode is on (from `locked` capability) |
-| Standard light conditions | From capabilities |
+| ID                        | Title                                        |
+| ------------------------- | -------------------------------------------- |
+| `facet_is`                | Facet is [facet selector 1–12]               |
+| `is_paused`               | Tracking is paused (from `onoff` capability) |
+| `is_locked`               | Lock mode is on (from `locked` capability)   |
+| Standard light conditions | From capabilities                            |
 
 ### Actions
 
-| ID | Title | Args |
-|---|---|---|
-| `set_pause` | Set pause mode | on/off dropdown |
-| `set_lock` | Set lock mode | on/off dropdown |
-| `set_auto_pause` | Set auto-pause delay | number (minutes, 0 = disabled) |
-| `sync_time` | Sync device time | none |
-| Standard light actions | Set color, set brightness | From capabilities |
+| ID                     | Title                     | Args                           |
+| ---------------------- | ------------------------- | ------------------------------ |
+| `set_pause`            | Set pause mode            | on/off dropdown                |
+| `set_lock`             | Set lock mode             | on/off dropdown                |
+| `set_auto_pause`       | Set auto-pause delay      | number (minutes, 0 = disabled) |
+| `sync_time`            | Sync device time          | none                           |
+| Standard light actions | Set color, set brightness | From capabilities              |
 
 > Note: `onoff` on/off actions naturally map to pause/resume, so no separate pause action card is strictly needed — but `set_pause` as an explicit action is clearer for automation builders.
 
@@ -383,14 +388,14 @@ Created as `homey:device:<id>:facet_1_daily_minutes` … `facet_12_daily_minutes
 
 ## Device Settings
 
-| Setting ID | Type | Default | Notes |
-|---|---|---|---|
-| `facet_1_label` … `facet_12_label` | string | `"Facet 1"` … `"Facet 12"` | Used in Flow tokens and Insights log names |
-| `ble_password` | string | `"000000"` | Sent to device on every connect |
-| `double_tap_sensitivity` | enum | `"medium"` | `"low"` / `"medium"` / `"high"` — maps to register presets |
-| `auto_pause_delay` | number | `0` | Minutes, 0 = disabled |
-| `blink_interval` | number | `10` | Seconds, 5–60 |
-| `insights_update_interval` | number | `15` | Minutes between Insights writes during live session |
+| Setting ID                         | Type   | Default                    | Notes                                                      |
+| ---------------------------------- | ------ | -------------------------- | ---------------------------------------------------------- |
+| `facet_1_label` … `facet_12_label` | string | `"Facet 1"` … `"Facet 12"` | Used in Flow tokens and Insights log names                 |
+| `ble_password`                     | string | `"000000"`                 | Sent to device on every connect                            |
+| `double_tap_sensitivity`           | enum   | `"medium"`                 | `"low"` / `"medium"` / `"high"` — maps to register presets |
+| `auto_pause_delay`                 | number | `0`                        | Minutes, 0 = disabled                                      |
+| `blink_interval`                   | number | `10`                       | Seconds, 5–60                                              |
+| `insights_update_interval`         | number | `15`                       | Minutes between Insights writes during live session        |
 
 ### Double-tap sensitivity presets
 
@@ -403,6 +408,7 @@ const DOUBLE_TAP_PRESETS = {
   high:   { threshold: 0x10, limit: 0x08, latency: 0x10, window: 0xFF },
 };
 ```
+
 > These values are approximate — validate against the real device. The pytimefliplib project may document what the mobile app uses.
 
 ---
@@ -550,6 +556,7 @@ Allowed in `device.js` for periodic updates and reconnect logic despite ESLint w
 ### Flow Cards
 
 Flow cards must be defined as individual JSON files in `.homeycompose/flow/`:
+
 - `.homeycompose/flow/triggers/<id>.json`
 - `.homeycompose/flow/conditions/<id>.json`
 - `.homeycompose/flow/actions/<id>.json`
@@ -557,6 +564,7 @@ Flow cards must be defined as individual JSON files in `.homeycompose/flow/`:
 **Do NOT** use `flows` (plural) in `.homeycompose/app.json` — SDK v3 expects `flow` (singular) structure which is generated from individual files.
 
 Token definitions use `name` not `id`:
+
 ```json
 {
   "title": { "en": "TimeFlip facet changed" },
@@ -571,22 +579,26 @@ Token definitions use `name` not `id`:
 These are required when publishing but validated only at `publish` level (not `debug`):
 
 - **Driver images** (`.driver.compose.json`):
+  
   ```json
   "images": {
     "small": "/drivers/timeflip/assets/images/small.png",
     "large": "/drivers/timeflip/assets/images/large.png"
   }
   ```
+  
   - `small.png`: 75x75 pixels, PNG format
   - `large.png`: 75x75 pixels, PNG format
   - Driver icons should be clean and simple (solid color + shape)
 
 - **Energy config** (required when using `measure_battery`):
+  
   ```json
   "energy": {
     "batteries": ["AA", "AA"]
   }
   ```
+  
   TimeFlip 2 uses two AA batteries.
 
 ---
