@@ -75,8 +75,12 @@ class TimeFlipController extends EventEmitter {
       this.emit('disconnected');
     });
 
-    const battery = await this.client.readBattery();
-    this.emit('battery_updated', battery);
+    try {
+      const battery = await this.client.readBattery();
+      this.emit('battery_updated', battery);
+    } catch (err) {
+      this.emit('battery_updated', 0);
+    }
   }
 
   async stop() {
@@ -114,6 +118,10 @@ class TimeFlipController extends EventEmitter {
 
   _onFacetChange(facet) {
     if (facet === 0) return;
+    if (facet < 1 || facet > 12) {
+      this.emit('error', `Invalid facet value: ${facet}`);
+      return;
+    }
 
     this._currentFacet = facet;
     this._facetStartTimes[facet] = Math.floor(Date.now() / 1000);
@@ -141,21 +149,33 @@ class TimeFlipController extends EventEmitter {
 
   async setPause(paused) {
     const cmd = paused ? CMD_PAUSE_ON : CMD_PAUSE_OFF;
-    await this.client.writeCommand(cmd);
-    this._isPaused = paused;
-    this.emit('pause_changed', paused);
+    try {
+      await this.client.writeCommand(cmd);
+      this._isPaused = paused;
+      this.emit('pause_changed', paused);
+    } catch (err) {
+      this.emit('error', `Failed to set pause: ${err.message}`);
+    }
   }
 
   async setLock(locked) {
     const cmd = locked ? CMD_LOCK_ON : CMD_LOCK_OFF;
-    await this.client.writeCommand(cmd);
-    this._isLocked = locked;
-    this.emit('lock_changed', locked);
+    try {
+      await this.client.writeCommand(cmd);
+      this._isLocked = locked;
+      this.emit('lock_changed', locked);
+    } catch (err) {
+      this.emit('error', `Failed to set lock: ${err.message}`);
+    }
   }
 
   async setAutoPause(delayMinutes) {
     const cmd = [0x05, (delayMinutes >> 8) & 0xFF, delayMinutes & 0xFF];
-    await this.client.writeCommand(cmd);
+    try {
+      await this.client.writeCommand(cmd);
+    } catch (err) {
+      this.emit('error', `Failed to set auto-pause: ${err.message}`);
+    }
   }
 
   async syncTime() {

@@ -355,6 +355,73 @@
           "en": "Sync device time"
         },
         "id": "sync_time"
+      },
+      {
+        "title": {
+          "en": "Set LED brightness"
+        },
+        "args": [
+          {
+            "name": "brightness",
+            "type": "number",
+            "min": 0,
+            "max": 100
+          }
+        ],
+        "id": "set_brightness"
+      },
+      {
+        "title": {
+          "en": "Set LED color"
+        },
+        "args": [
+          {
+            "name": "facet",
+            "type": "dropdown",
+            "values": [
+              { "id": "1", "label": { "en": "1" } },
+              { "id": "2", "label": { "en": "2" } },
+              { "id": "3", "label": { "en": "3" } },
+              { "id": "4", "label": { "en": "4" } },
+              { "id": "5", "label": { "en": "5" } },
+              { "id": "6", "label": { "en": "6" } },
+              { "id": "7", "label": { "en": "7" } },
+              { "id": "8", "label": { "en": "8" } },
+              { "id": "9", "label": { "en": "9" } },
+              { "id": "10", "label": { "en": "10" } },
+              { "id": "11", "label": { "en": "11" } },
+              { "id": "12", "label": { "en": "12" } }
+            ]
+          },
+          {
+            "name": "color",
+            "type": "dropdown",
+            "values": [
+              { "id": "red", "label": { "en": "Red" } },
+              { "id": "green", "label": { "en": "Green" } },
+              { "id": "blue", "label": { "en": "Blue" } },
+              { "id": "yellow", "label": { "en": "Yellow" } },
+              { "id": "cyan", "label": { "en": "Cyan" } },
+              { "id": "magenta", "label": { "en": "Magenta" } },
+              { "id": "white", "label": { "en": "White" } }
+            ]
+          }
+        ],
+        "id": "set_led_color"
+      },
+      {
+        "title": {
+          "en": "Set blink interval"
+        },
+        "args": [
+          {
+            "name": "interval",
+            "type": "number",
+            "min": 5,
+            "max": 60
+          }
+        ],
+        "id": "set_blink_interval"
       }
     ]
   },

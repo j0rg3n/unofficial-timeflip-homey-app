@@ -11,7 +11,8 @@
     "onoff",
     "locked",
     "timeflip_facet",
-    "timeflip_facet_name"
+    "timeflip_facet_name",
+    "error"
   ],
   "settings": [
     { "id": "ble_password", "type": "text", "label": { "en": "BLE Password" }, "value": "000000", "hint": { "en": "6-digit password" } },
