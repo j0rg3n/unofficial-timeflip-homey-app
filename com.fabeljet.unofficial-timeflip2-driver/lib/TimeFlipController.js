@@ -58,17 +58,23 @@ class TimeFlipController extends EventEmitter {
     this.settings.autoPauseDelay = settings.autoPauseDelay || 0;
 
     await this.client.connect();
+    console.log('Password sending...');
     const pwValid = await this.client.sendPassword(this.settings.blePassword);
+    console.log('Password valid:', pwValid);
     if (!pwValid) {
       throw new Error('Invalid password');
     }
 
+    console.log('Subscribing to facets...');
     await this.client.subscribeToFacets((facet) => {
+      console.log('Facet notification received:', facet);
       this._onFacetChange(facet);
     });
 
     // Read initial facet AFTER subscribing - subscription already fired by now
+    console.log('Reading initial facet...');
     const initialFacet = await this.client.readFacet();
+    console.log('Initial facet value:', initialFacet);
     if (initialFacet > 0) {
       this._onFacetChange(initialFacet);
     }
