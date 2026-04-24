@@ -11,14 +11,11 @@ class TimeFlipApp extends Homey.App {
 
     this.on('trigger:facet_changed', ({ device, tokens }) => {
       this.log('facet_changed trigger received:', tokens);
-      if (!tokens || tokens.facet === undefined) {
-        this.log('ERROR: tokens or facet undefined:', tokens);
-      }
-      facetChangedTrigger.trigger(device, tokens).catch(this.error);
+      facetChangedTrigger.trigger(tokens).catch(this.error);
     });
 
     this.on('trigger:double_tap', ({ device, tokens }) => {
-      doubleTapTrigger.trigger(device, tokens).catch(this.error);
+      doubleTapTrigger.trigger(tokens).catch(this.error);
     });
 
     const facetIsCondition = this.homey.flow.getConditionCard('facet_is');
