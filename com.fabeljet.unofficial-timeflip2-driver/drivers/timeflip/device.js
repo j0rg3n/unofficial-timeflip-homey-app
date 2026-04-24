@@ -152,16 +152,23 @@ class TimeFlipDevice extends Homey.Device {
     });
 
     this._controller.on('facet_changed', (data) => {
-      const tokens = { facet: data.facet, facet_name: data.facetName };
-      this.setCapabilityValue('timeflip_facet', data.facet).catch((err) => this.error(err));
-      this.setCapabilityValue('timeflip_facet_name', data.facetName).catch((err) => this.error(err));
+      if (!data || data.facet === undefined) return;
+      const facetNum = parseInt(data.facet, 10);
+      const facetName = String(data.facetName || `Facet ${facetNum}`);
+      const tokens = { facet: facetNum, facet_name: facetName };
+      this.setCapabilityValue('timeflip_facet', facetNum).catch((err) => this.error(err));
+      this.setCapabilityValue('timeflip_facet_name', facetName).catch((err) => this.error(err));
       this.setCapabilityValue('onoff', true).catch((err) => this.error(err));
-      this.homey.app.emit('trigger:facet_changed', { device: this, tokens: tokens });
+      this.homey.app.emit('trigger:facet_changed', { device: this, tokens });
     });
 
     this._controller.on('double_tap', (data) => {
+      if (!data || data.facet === undefined) return;
+      const facetNum = parseInt(data.facet, 10);
+      const facetName = String(data.facetName || `Facet ${facetNum}`);
+      const tokens = { facet: facetNum, facet_name: facetName, paused: Boolean(data.paused) };
       this.setCapabilityValue('onoff', !data.paused).catch((err) => this.error(err));
-      this.homey.app.emit('trigger:double_tap', { device: this, tokens: data });
+      this.homey.app.emit('trigger:double_tap', { device: this, tokens });
     });
 
     this._controller.on('battery_updated', (level) => {
@@ -179,7 +186,7 @@ class TimeFlipDevice extends Homey.Device {
     this._controller.on('insights_updated', (totals) => {
       for (let i = 1; i <= 12; i++) {
         const loggerId = 'facet_' + i + '_daily_minutes';
-        const logger = this.homey.app.getInsightLoggers()[loggerId];
+        const logger = this.homey.insight.getLoggers()[loggerId];
         if (logger) {
           logger.createEntry(totals[i]).catch((err) => this.error(err));
         }
@@ -190,7 +197,7 @@ class TimeFlipDevice extends Homey.Device {
       const totals = this._controller.getFacetDailyTotals();
       for (let i = 1; i <= 12; i++) {
         const loggerId = 'facet_' + i + '_daily_minutes';
-        const logger = this.homey.app.getInsightLoggers()[loggerId];
+        const logger = this.homey.insight.getLoggers()[loggerId];
         if (logger) {
           logger.createEntry(totals[i]).catch((err) => this.error(err));
         }
