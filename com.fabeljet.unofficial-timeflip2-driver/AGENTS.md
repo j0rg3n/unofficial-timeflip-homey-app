@@ -1,13 +1,18 @@
 # AGENTS.md — TimeFlip Homey App
 
-## Running the app
+## Quick reference
 
 ```bash
 cd com.fabeljet.unofficial-timeflip2-driver
-homey app run --remote
+
+homey app run --remote      # Run app on Homey (use this, NOT homey app install)
+npm run coverage           # Run tests with coverage
 ```
 
-No `homey app install` needed — `--remote` runs on Homey directly.
+## Debugging
+
+- `console.log()` output goes to Homey logs (web UI → More → Logs)
+- Avoid logging sensitive data (passwords, device IDs)
 
 ## BLE pairing flow
 
@@ -15,6 +20,7 @@ No `homey app install` needed — `--remote` runs on Homey directly.
 2. Store `advertisement.uuid` in both `data.id` and `store.peripheralUuid`
 3. Device's `onConnect` uses `ble.find(this.getStore().peripheralUuid)` to reconnect
 
-## Key insight
+## Key insights
 
-The scan ID from `ble.discover()` (e.g., "5") is **different** from the peripheral UUID. Use `advertisement.uuid` for `ble.find()`.
+- The scan ID from `ble.discover()` (e.g., "5") is **different** from the peripheral UUID. Use `advertisement.uuid` for `ble.find()`.
+- **Never ask the user to disconnect/reconnect the device** on every code change — use `homey app run --remote` for rapid iteration
