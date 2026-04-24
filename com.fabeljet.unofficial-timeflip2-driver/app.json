@@ -440,12 +440,7 @@
       "pair": [
         {
           "id": "list",
-          "name": {
-            "en": "Select TimeFlip 2"
-          },
-          "hint": {
-            "en": "Select your TimeFlip 2 from the list"
-          }
+          "template": "list_devices"
         }
       ],
       "ble": {

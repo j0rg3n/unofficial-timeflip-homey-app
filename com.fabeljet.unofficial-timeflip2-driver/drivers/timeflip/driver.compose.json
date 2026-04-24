@@ -24,7 +24,10 @@
     { "id": "blink_interval", "type": "number", "label": { "en": "LED blink interval (seconds)" }, "value": 10, "min": 5, "max": 60 }
   ],
   "pair": [
-    { "id": "list", "name": { "en": "Select TimeFlip 2" }, "hint": { "en": "Select your TimeFlip 2 from the list" } }
+    {
+      "id": "list",
+      "template": "list_devices"
+    }
   ],
   "ble": {
     "serviceUuid": "f1196f50-71a4-11e6-bdf4-0800200c9a66",

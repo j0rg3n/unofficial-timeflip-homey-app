@@ -7,30 +7,24 @@ class TimeFlipDriver extends Homey.Driver {
     this.log('TimeFlipDriver has been initialized');
   }
 
-  async onPairListDevices() {
-    const devices = [];
-
-    try {
-      const peripherals = await this.homey.ble.find();
-
-      for (const peripheral of Object.values(peripherals)) {
-        const { advertisement } = peripheral;
-        const localName = advertisement.localName || '';
-
-        if (localName.includes('TimeFlip')) {
+  async onPair(session) {
+    session.setHandler('list_devices', async () => {
+      const devices = [];
+      
+      const advertisements = await this.homey.ble.discover();
+      
+      for (const [id, adv] of Object.entries(advertisements || {})) {
+        const localName = adv.localName || '';
+        if (localName?.toLowerCase().includes('timeflip')) {
           devices.push({
-            name: peripheral.localName || 'TimeFlip 2',
-            data: {
-              id: peripheral.id,
-            },
+            name: localName,
+            data: { id },
           });
         }
       }
-    } catch (err) {
-      this.log('Error scanning for devices:', err.message);
-    }
-
-    return devices;
+      
+      return devices;
+    });
   }
 }
 
