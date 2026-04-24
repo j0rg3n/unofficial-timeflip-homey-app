@@ -10,7 +10,7 @@ Follow these steps for every change you make:
 
 3. Run tests and check coverage.
 
-4. Use `timeout 10 homey app run --remote` to smoke the app.
+4. Use `timeout 10 homey app run --remote | ts` to smoke the app with timestamps.
 
 5. Commit after completing steps or even substeps in TODO.md.
 
