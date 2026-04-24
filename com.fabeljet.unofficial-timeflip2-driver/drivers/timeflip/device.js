@@ -156,6 +156,7 @@ class TimeFlipDevice extends Homey.Device {
         this.log('facet_changed: no data');
         return;
       }
+      this.log('DEBUG facet_changed data:', JSON.stringify(data));
       const facetNum = parseInt(data.facet, 10);
       if (isNaN(facetNum)) {
         this.log('facet_changed: invalid facet', data);
@@ -163,6 +164,7 @@ class TimeFlipDevice extends Homey.Device {
       }
       const facetName = String(data.facetName || `Facet ${facetNum}`);
       const tokens = { facet: facetNum, facet_name: facetName };
+      this.log('DEBUG emitting facet_changed with tokens:', JSON.stringify(tokens));
       this.setCapabilityValue('timeflip_facet', facetNum).catch((err) => this.error(err));
       this.setCapabilityValue('timeflip_facet_name', facetName).catch((err) => this.error(err));
       this.setCapabilityValue('onoff', true).catch((err) => this.error(err));
