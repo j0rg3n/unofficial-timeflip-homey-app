@@ -110,6 +110,24 @@ All Groups 1-7 complete ✓. Groups 8+ below are remaining work.
 
 ---
 
+## Bugs
+
+(Add to SPEC.md if missing)
+
+- [x] Facet and facet name is only updated when device is flipped - **Now updates on flip**
+
+- [x] Light color, brightness capability is not shown in device UI - **Added light_hue, light_saturation, light_brightness capabilities**
+
+- [x] Pause, lock capabilities not shown in device UI - **Already in driver.compose.json**
+
+- [x] Facet names is not configurable in settings or advanced settings - **Added facet_1_label through facet_12_label settings**
+
+- [ ] Battery indicator in UI shows only "?" - **Need to test**
+
+- [x] Device shows on/off capability in UI, but mapping is not clear - **onoff = tracking active (true) / paused (false)**
+
+- [x] No flow cards to set light color, brightness - **Added set_brightness, set_led_color, set_blink_interval** 
+
 ## Group 12: Production Readiness
 
 - [ ] Run `npm run lint` and fix warnings
