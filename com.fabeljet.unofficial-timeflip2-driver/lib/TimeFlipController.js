@@ -67,8 +67,9 @@ class TimeFlipController extends EventEmitter {
       this._onFacetChange(facet);
     });
 
+    // Read initial facet AFTER subscribing - subscription already fired by now
     const initialFacet = await this.client.readFacet();
-    if (initialFacet) {
+    if (initialFacet > 0) {
       this._onFacetChange(initialFacet);
     }
 
@@ -128,7 +129,8 @@ class TimeFlipController extends EventEmitter {
       return;
     }
 
-    if (this._currentFacet === facet) return;
+    // Always emit when starting (currentFacet=0), otherwise debounce
+    if (this._currentFacet !== 0 && this._currentFacet === facet) return;
 
     this._currentFacet = facet;
     this._facetStartTimes[facet] = Math.floor(Date.now() / 1000);
