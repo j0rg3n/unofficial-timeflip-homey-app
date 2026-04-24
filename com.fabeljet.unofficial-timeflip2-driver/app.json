@@ -539,7 +539,7 @@
         "timeflip_facet_name",
         "light_hue",
         "light_saturation",
-        "light_brightness"
+        "dim"
       ],
       "settings": [
         {
