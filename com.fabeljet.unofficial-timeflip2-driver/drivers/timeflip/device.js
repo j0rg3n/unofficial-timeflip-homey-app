@@ -160,14 +160,17 @@ class TimeFlipDevice extends Homey.Device {
       this._attemptReconnect(0).catch((err) => this.error(err));
     });
 
-    let _lastFacetUpdate = 0;
+    let _lastSetFacet = null;
     this._controller.on('facet_changed', (data) => {
       if (!data) return;
       const facetNum = parseInt(data.facet, 10);
       if (isNaN(facetNum)) return;
-      const now = Date.now();
-      if (now - _lastFacetUpdate < 200) return;
-      _lastFacetUpdate = now;
+      if (facetNum === _lastSetFacet) {
+        console.log('debounce: same facet', facetNum, '- ignoring');
+        return;
+      }
+      _lastSetFacet = facetNum;
+      console.log('setting facet to', facetNum);
       const facetName = String(data.facetName || `Facet ${facetNum}`);
       const tokens = { facet: facetNum, facet_name: facetName };
       this.setCapabilityValue('timeflip_facet', facetNum).catch((err) => this.error(err));
