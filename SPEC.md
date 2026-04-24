@@ -332,7 +332,7 @@ mock.setBatteryLevel(level)
 | `measure_battery`  | Polled from battery level characteristic on connect + periodically                             |
 | `light_hue`        | Maps to current active facet's LED color                                                       |
 | `light_saturation` | Maps to current active facet's LED color                                                       |
-| `light_brightness` | Maps to `0x09` command (global LED brightness)                                                 |
+| `light_brightness` | Maps to `0x09` command (global LED brightness) → use `dim` capability |
 | `onoff`            | `true` = tracking active (pause off), `false` = paused. "Turn off" = pause, "Turn on" = resume |
 | `locked`           | Lock mode state                                                                                |
 
