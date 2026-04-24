@@ -10,6 +10,7 @@ class TimeFlipDevice extends Homey.Device {
 
     this._controller = null;
     this._facetLabels = {};
+    this._blePeripheral = null;
 
     for (let i = 1; i <= 12; i++) {
       const label = this.getSetting('facet_' + i + '_label');
@@ -17,48 +18,119 @@ class TimeFlipDevice extends Homey.Device {
     }
 
     this._insightsUpdateInterval = null;
+    
+    this._scheduleConnection();
   }
 
-  async onConnect() {
-    const blePeripheral = await this.homey.ble.find(this.getData().id);
+  async _scheduleConnection() {
+    let peripheralUuid = this.getStore().peripheralUuid || this.getData().id;
+    this.log('Scheduling connection for peripheralUuid:', peripheralUuid);
+    
+    let blePeripheral;
+    try {
+      blePeripheral = await this.homey.ble.find(peripheralUuid);
+    } catch (e) {
+      this.log('ble.find failed, scanning for TimeFlip...');
+      const advertisements = await this.homey.ble.discover();
+      for (const [id, adv] of Object.entries(advertisements || {})) {
+        const name = adv.localName || '';
+        if (name.toLowerCase().includes('timeflip')) {
+          peripheralUuid = adv.uuid;
+          this.log('Found TimeFlip via scan, uuid:', peripheralUuid);
+          blePeripheral = await this.homey.ble.find(peripheralUuid);
+          break;
+        }
+      }
+    }
+    
     if (!blePeripheral) {
-      throw new Error('Device not found');
+      this.log('Device not found, retrying in 30s...');
+      this._connectTimeout = setTimeout(() => this._scheduleConnection(), 30000);
+      return;
+    }
+
+    this._blePeripheral = await blePeripheral.connect();
+    this.log('Connected to BLE peripheral');
+
+    this._blePeripheral.on('disconnect', () => {
+      this.log('BLE peripheral disconnected');
+      this._blePeripheral = null;
+      this._attemptReconnect(0).catch((err) => this.error(err));
+    });
+
+    const peripheral = this._blePeripheral;
+    let tfService = null;
+    
+    // Debug: discover all services and read characteristics
+    try {
+      const allServices = await peripheral.discoverServices([]);
+      this.log('=== ALL SERVICES ===');
+      for (const svc of allServices) {
+        this.log('Service:', svc.uuid);
+        if (svc.uuid.includes('f1196f50')) {
+          tfService = svc;
+        }
+        const chars = await svc.discoverCharacteristics([]);
+        for (const char of chars) {
+          try {
+            const data = await char.read();
+            this.log('  ', char.uuid, '->', Array.prototype.slice.call(data));
+          } catch (e) {
+            this.log('  ', char.uuid, '-> ERROR:', e.message);
+          }
+        }
+      }
+      this.log('=== END ===');
+    } catch (e) {
+      this.log('Discover error:', e.message);
     }
 
     const blePassword = this.getSetting('ble_password') || DEFAULT_PASSWORD;
     const doubleTapSensitivity = this.getSetting('double_tap_sensitivity') || 'medium';
+    this.log('Password:', blePassword);
 
+    // peripheral is already defined above
+    
+    const CLIENT_SERVICE = 'f1196f5071a411e6bdf40800200c9a66';
+    const CHAR_PASSWORD = 'f1196f5771a411e6bdf40800200c9a66';
+    const CHAR_RESULT = 'f1196f5371a411e6bdf40800200c9a66';
+    const CHAR_FACET = 'f1196f5271a411e6bdf40800200c9a66';
+    const CHAR_DOUBLETAP = 'f1196f5571a411e6bdf40800200c9a66';
+    const CHAR_CMD = 'f1196f5471a411e6bdf40800200c9a66';
+    const BATTERY_SERVICE = '180f';
+    const BATTERY_CHAR = '2a19';
+    
     const client = {
       connected: false,
-      _service: null,
       async connect() {
-        const services = await blePeripheral.discoverServices([
-          'f1196f50-71a4-11e6-bdf4-0800200c9a66',
-        ]);
-        this._service = services[0];
         this.connected = true;
         return true;
       },
       async disconnect() {
         this.connected = false;
-        await blePeripheral.disconnect();
+        await peripheral.disconnect();
       },
       async sendPassword(pw) {
-        const char = await this._service.discoverCharacteristic('f1196f57-71a4-11e6-bdf4-0800200c9a66');
-        await char.write(Buffer.from(String(pw).padEnd(6, '0').slice(0, 6)), false);
-        const resultChar = await this._service.discoverCharacteristic('f1196f53-71a4-11e6-bdf4-0800200c9a66');
-        const result = await resultChar.read();
+        const passwordBuf = Buffer.from(String(pw).padEnd(6, '0').slice(0, 6));
+        await peripheral.write(CLIENT_SERVICE, CHAR_PASSWORD, passwordBuf);
+        const result = await peripheral.read(CLIENT_SERVICE, CHAR_RESULT);
         return result[0] === 0x01;
       },
       async subscribeToFacets(cb) {
-        const char = await this._service.discoverCharacteristic('f1196f52-71a4-11e6-bdf4-0800200c9a66');
-        await char.enableNotify();
-        char.on('data', (data) => cb(data[0]));
+        const services = await peripheral.discoverServices([]);
+        const tfSvc = services.find(s => s.uuid.includes('f1196f50'));
+        if (!tfSvc) throw new Error('TimeFlip service not found');
+        const chars = await tfSvc.discoverCharacteristics([CHAR_FACET]);
+        const char = chars[0];
+        await char.subscribeToNotifications((data) => cb(data[0]));
       },
       async subscribeToDoubleTap(cb) {
-        const char = await this._service.discoverCharacteristic('f1196f55-71a4-11e6-bdf4-0800200c9a66');
-        await char.enableNotify();
-        char.on('data', (data) => {
+        const services = await peripheral.discoverServices([]);
+        const tfSvc = services.find(s => s.uuid.includes('f1196f50'));
+        if (!tfSvc) throw new Error('TimeFlip service not found');
+        const chars = await tfSvc.discoverCharacteristics([CHAR_DOUBLETAP]);
+        const char = chars[0];
+        await char.subscribeToNotifications((data) => {
           const value = data[0];
           const paused = value >= 128;
           const facet = paused ? value - 128 : value;
@@ -66,21 +138,24 @@ class TimeFlipDevice extends Homey.Device {
         });
       },
       async readBattery() {
-        const char = await this._service.discoverCharacteristic('f1196f56-71a4-11e6-bdf4-0800200c9a66');
-        const data = await char.read();
-        return data[0];
+        const services = await peripheral.discoverServices([]);
+        const battSvc = services.find(s => s.uuid.includes('180f'));
+        if (!battSvc) return 100;
+        const chars = await battSvc.discoverCharacteristics(['2a19']);
+        if (!chars || !chars[0]) return 100;
+        const data = await chars[0].read();
+        return data ? data[0] : 100;
       },
-      async readHistory() {
+      async readHistory(fromEvent) {
         return [];
       },
       async writeCommand(bytes) {
-        const cmdChar = await this._service.discoverCharacteristic('f1196f54-71a4-11e6-bdf4-0800200c9a66');
-        await cmdChar.write(Buffer.from(bytes), false);
+        await peripheral.write(CLIENT_SERVICE, CHAR_CMD, Buffer.from(bytes));
         return [0x00, 0x02];
       },
       on(event, cb) {
         if (event === 'disconnect') {
-          blePeripheral.on('disconnect', cb);
+          peripheral.on('disconnect', cb);
         }
       },
     };

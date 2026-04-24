@@ -18,7 +18,12 @@ class TimeFlipDriver extends Homey.Driver {
         if (localName?.toLowerCase().includes('timeflip')) {
           devices.push({
             name: localName,
-            data: { id },
+            data: {
+              id: adv.uuid,
+            },
+            store: {
+              peripheralUuid: adv.uuid,
+            },
           });
         }
       }

@@ -6,6 +6,26 @@ class TimeFlipApp extends Homey.App {
   async onInit() {
     this.log('TimeFlipApp has been initialized');
 
+    // Debug: Try to find and read TimeFlip after 3 seconds
+setTimeout(async () => {
+      this.log('=== DEBUG SCAN ===');
+      try {
+        const advertisements = await this.homey.ble.discover();
+        for (const [id, adv] of Object.entries(advertisements || {})) {
+          const name = adv.localName || '';
+          if (name.toLowerCase().includes('timeflip')) {
+            this.log('Found TimeFlip via scan:', name, 'scan id:', id);
+            this.log('  uuid:', adv.uuid);
+            this.log('  address:', adv.address);
+            this.log('  rssi:', adv.rssi);
+          }
+        }
+        this.log('=== END ===');
+      } catch (e) {
+        this.log('Scan error:', e.message);
+      }
+    }, 3000);
+
     const facetChangedTrigger = this.homey.flow.getTriggerCard('facet_changed');
     const doubleTapTrigger = this.homey.flow.getTriggerCard('double_tap');
 
