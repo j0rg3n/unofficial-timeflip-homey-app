@@ -14,7 +14,7 @@
     "timeflip_facet_name",
     "light_hue",
     "light_saturation",
-    "light_brightness"
+    "dim"
   ],
   "settings": [
     { "id": "ble_password", "type": "text", "label": { "en": "BLE Password" }, "value": "000000", "hint": { "en": "6-digit password" } },
