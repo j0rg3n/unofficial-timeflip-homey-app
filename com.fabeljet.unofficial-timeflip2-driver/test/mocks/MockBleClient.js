@@ -32,6 +32,10 @@ class MockBleClient {
     this._facetCallback = callback;
   }
 
+  async readFacet() {
+    return this._currentFacet || 1;
+  }
+
   async subscribeToDoubleTap(callback) {
     this._doubleTapCallback = callback;
   }
