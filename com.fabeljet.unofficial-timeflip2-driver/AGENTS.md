@@ -22,6 +22,7 @@ npm run coverage           # Run tests with coverage
 3. Device's `onConnect` uses `ble.find(this.getStore().peripheralUuid)` to reconnect
 
 ### Mocking
+
 - **BLE layer**: use `MockBleClient` (see SPEC §9) to simulate all BLE interactions. Never write tests that require a real BLE peripheral.
 - **Homey SDK**: use `MockHomeyDevice` to simulate all Homey SDK interactions. Never write tests that require a running Homey instance.
 - **Mock state is test state**: use `mock.getSentCommands()` to assert on outgoing BLE messages. Do not inspect internal controller state directly.
