@@ -1,0 +1,14 @@
+{
+  "id": "set_blink_interval",
+  "title": {
+    "en": "Set blink interval"
+  },
+  "args": [
+    {
+      "name": "interval",
+      "type": "number",
+      "min": 5,
+      "max": 60
+    }
+  ]
+}
