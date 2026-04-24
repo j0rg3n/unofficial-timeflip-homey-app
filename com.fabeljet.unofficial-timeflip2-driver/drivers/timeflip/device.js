@@ -135,10 +135,24 @@ class TimeFlipDevice extends Homey.Device {
 
     this._controller = new TimeFlipController(client);
 
-    await this._controller.start({
-      blePassword: blePassword,
-      doubleTapSensitivity: doubleTapSensitivity,
-    });
+    try {
+      await this._controller.start({
+        blePassword: blePassword,
+        doubleTapSensitivity: doubleTapSensitivity,
+      });
+      await this.setCapabilityValue('error', null);
+    } catch (err) {
+      this.error('Controller start failed:', err.message);
+      if (err.message.includes('Invalid password')) {
+        await this.setCapabilityValue('error', 'Invalid password');
+      } else if (err.message.includes('not found') || err.message.includes('connect')) {
+        await this.setCapabilityValue('error', 'Connection failed');
+      } else {
+        await this.setCapabilityValue('error', err.message);
+      }
+      this._attemptReconnect(0).catch((e) => this.error(e));
+      return;
+    }
 
     this._controller.on('disconnected', () => {
       this.log('Device disconnected, attempting reconnect...');

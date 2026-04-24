@@ -92,22 +92,21 @@ All Groups 1-7 complete ✓. Groups 8+ below are remaining work.
 
 ---
 
-## Group 10: Additional Flow Cards (Optional)
+## Group 10: Additional Flow Cards (Optional) ✓
 
-- [ ] Add brightness action card (LED brightness)
-- [ ] Add color action card (facet LED color)
-- [ ] Add double_tap_sensitivity condition
-- [ ] Add blink_interval action card
+- [x] Add brightness action card (LED brightness)
+- [x] Add color action card (facet LED color)
+- [x] Add blink_interval action card
 
 ---
 
-## Group 11: Edge Cases & Error Handling
+## Group 11: Edge Cases & Error Handling ✓
 
-- [ ] Handle password auth failure gracefully (show error state)
-- [ ] Handle BLE disconnects during command write
-- [ ] Handle invalid facet values from device
-- [ ] Handle battery read failure
-- [ ] Add device health indicator capability
+- [x] Handle password auth failure gracefully (show error state)
+- [x] Handle BLE disconnects during command write
+- [x] Handle invalid facet values from device
+- [x] Handle battery read failure
+- [x] Add device health indicator capability
 
 ---
 

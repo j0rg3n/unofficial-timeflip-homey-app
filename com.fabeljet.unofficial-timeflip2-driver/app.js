@@ -63,6 +63,40 @@ class TimeFlipApp extends Homey.App {
         await controller.syncTime();
       }
     });
+
+    const setBrightnessAction = this.homey.flow.getActionCard('set_brightness');
+    setBrightnessAction.registerRunListener(async (args, device) => {
+      const controller = device._controller;
+      if (controller) {
+        await controller.setBrightness(args.brightness);
+      }
+    });
+
+    const setLedColorAction = this.homey.flow.getActionCard('set_led_color');
+    setLedColorAction.registerRunListener(async (args, device) => {
+      const controller = device._controller;
+      if (controller) {
+        const colors = {
+          red: [255, 0, 0],
+          green: [0, 255, 0],
+          blue: [0, 0, 255],
+          yellow: [255, 255, 0],
+          cyan: [0, 255, 255],
+          magenta: [255, 0, 255],
+          white: [255, 255, 255],
+        };
+        const rgb = colors[args.color] || [255, 255, 255];
+        await controller.setLedColor(parseInt(args.facet), rgb[0], rgb[1], rgb[2]);
+      }
+    });
+
+    const setBlinkIntervalAction = this.homey.flow.getActionCard('set_blink_interval');
+    setBlinkIntervalAction.registerRunListener(async (args, device) => {
+      const controller = device._controller;
+      if (controller) {
+        await controller.setBlinkInterval(args.interval);
+      }
+    });
   }
 }
 
