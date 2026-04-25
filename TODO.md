@@ -111,13 +111,27 @@ All Groups 1-7 complete ✓. Groups 8+ below are remaining work.
 ## Bugs
 
 - [x] Facet and facet name shows "-" initially - **Fixed: readFacet() on connect**
+
 - [?] Turning the dice is spammy (many notifications) - **Pending: verify with flow card test**
+
 - [x] Light color, brightness capability not shown in device UI - **Fixed: re-order capabilities, re-pair device**
 - [x] Pause, lock capabilities not shown in device UI - **Fixed: re-pair device**
 - [x] Battery indicator in UI shows only "?" - **Fixed: use full UUID for battery char**
 - [x] Device shows on/off capability in UI, but mapping unclear - **Fixed: onoff = pause state**
 - [x] No flow cards to set light color, brightness - **Done: set_brightness, set_led_color actions**
 - [x] No flow cards for facet changes - **Fixed: added device arg, registerDeviceTriggerCard**
+- [ ] No flow cards for when facet names change.
+- [ ] Saving facet labels in advaced settings results in error "cannot read property facet_X_label".
+- [ ] Toggling on/off (pause/unpause) gives Missing Capability Listener:onoff error.
+- [ ] Brightness slider doesn't change brightness of light.
+- [ ] Color picker doesn't change color of light.
+- [ ] Toggling locked/unlocked gives Missing Capability Listener:locked
+
+## Untested features
+
+1. Facet flow cards trigger and have correct values.
+
+2. Double-tap flow cards trigger and have correct values.
 
 ---
 
