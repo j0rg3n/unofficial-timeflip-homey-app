@@ -108,18 +108,18 @@ All Groups 1-7 complete ✓. Groups 8+ below are remaining work.
 - [x] Handle battery read failure
 - [x] Add device health indicator capability
 
----
-
 ## Bugs
 
 - [x] Facet and facet name shows "-" initially - **Fixed: readFacet() on connect**
-- [x] Turning the dice is spammy (many notifications) - **Fixed: 200ms debounce on UI updates**
-- [ ] Light color, brightness capability not shown in device UI (dim, light_hue, light_saturation)
-- [ ] Pause, lock capabilities not shown in device UI
-- [ ] Facet names not configurable in settings or advanced settings
-- [ ] Battery indicator in UI shows only "?"
-- [ ] Device shows on/off capability in UI, but mapping is not clear
-- [ ] No flow cards to set light color, brightness 
+- [?] Turning the dice is spammy (many notifications) - **Pending: verify with flow card test**
+- [x] Light color, brightness capability not shown in device UI - **Fixed: re-order capabilities, re-pair device**
+- [x] Pause, lock capabilities not shown in device UI - **Fixed: re-pair device**
+- [x] Battery indicator in UI shows only "?" - **Fixed: use full UUID for battery char**
+- [x] Device shows on/off capability in UI, but mapping unclear - **Fixed: onoff = pause state**
+- [x] No flow cards to set light color, brightness - **Done: set_brightness, set_led_color actions**
+- [x] No flow cards for facet changes - **Fixed: added device arg, registerDeviceTriggerCard**
+
+---
 
 ## Group 12: Production Readiness
 

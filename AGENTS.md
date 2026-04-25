@@ -12,9 +12,11 @@ Follow these steps for every change you make:
 
 4. Use `timeout 10 homey app run --remote | ts` to smoke the app with timestamps.
 
-5. Commit after completing steps or even substeps in TODO.md.
+5. Review code vs. SPEC.md before committing.
 
-6. Record new learnings: 
+6. Commit after completing steps or even substeps in TODO.md.
+
+7. Record new learnings: 
    
    1. About Homey, the API, or tooling: Goes in AGENTS.md.
    
@@ -54,6 +56,7 @@ Follow these steps for every change you make:
 - `getTriggerCard()` returns `FlowCardTrigger` → use `trigger(tokens)` only
 - `getDeviceTriggerCard()` returns `FlowCardTriggerDevice` → use `trigger(device, tokens)`
 - Never pass device to `getTriggerCard().trigger()`
+- Device triggers need `device` arg with `filter: "driver_id=xxx"` in flow JSON
 
 ### BLE Events
 
@@ -70,3 +73,4 @@ Follow these steps for every change you make:
 
 - Use `dim` not `light_brightness` for LED brightness control
 - Standard light capabilities: `onoff`, `dim`, `light_hue`, `light_saturation`
+- Re-pair device when changing capabilities - UI doesn't update without re-pairing

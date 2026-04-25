@@ -135,6 +135,16 @@
         "title": {
           "en": "TimeFlip double-tapped"
         },
+        "titleFormatted": {
+          "en": "TimeFlip double-tapped for [[device]]"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=timeflip"
+          }
+        ],
         "tokens": [
           {
             "name": "facet",
@@ -164,6 +174,16 @@
         "title": {
           "en": "TimeFlip facet changed"
         },
+        "titleFormatted": {
+          "en": "TimeFlip facet changed for [[device]]"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=timeflip"
+          }
+        ],
         "tokens": [
           {
             "name": "facet",
@@ -530,17 +550,29 @@
         "small": "/drivers/timeflip/assets/images/small.png",
         "large": "/drivers/timeflip/assets/images/large.png"
       },
-      "class": "other",
+      "class": "light",
       "capabilities": [
-        "measure_battery",
         "onoff",
-        "locked",
-        "timeflip_facet",
-        "timeflip_facet_name",
+        "dim",
         "light_hue",
         "light_saturation",
-        "dim"
+        "measure_battery",
+        "locked",
+        "timeflip_facet",
+        "timeflip_facet_name"
       ],
+      "capabilityOptions": {
+        "dim": {
+          "title": {
+            "en": "Brightness"
+          }
+        },
+        "light_hue": {
+          "title": {
+            "en": "Color"
+          }
+        }
+      },
       "settings": [
         {
           "id": "ble_password",
