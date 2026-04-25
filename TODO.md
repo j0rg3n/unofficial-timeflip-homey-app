@@ -123,9 +123,22 @@ All Groups 1-7 complete ✓. Groups 8+ below are remaining work.
 - [ ] No flow cards for when facet names change.
 - [ ] Saving facet labels in advaced settings results in error "cannot read property facet_X_label".
 - [ ] Toggling on/off (pause/unpause) gives Missing Capability Listener:onoff error.
+  - Root cause: No registerCapabilityListener for 'onoff' capability
+  - Fix: Add listener that calls setPause(true/false)
+
 - [ ] Brightness slider doesn't change brightness of light.
+  - Hypothesis 1: Capability listener not triggered (test with console.log)
+  - Hypothesis 2: Controller method fails silently (add error handling)
+  - Hypothesis 3: BLE command bytes wrong (log bytes sent)
+  - Hypothesis 4: HSV→RGB conversion wrong (verify math)
+
 - [ ] Color picker doesn't change color of light.
+  - Same hypotheses as brightness
+  - Additional: Need current facet context for setLedColor
+
 - [ ] Toggling locked/unlocked gives Missing Capability Listener:locked
+  - Root cause: No registerCapabilityListener for 'locked' capability
+  - Fix: Add listener that calls setLock(true/false)
 
 ## Untested features
 
