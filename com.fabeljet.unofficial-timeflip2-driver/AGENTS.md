@@ -14,6 +14,7 @@ npm run coverage           # Run tests with coverage
 - `console.log()` output goes to Homey logs (web UI → More → Logs)
 - Avoid logging sensitive data (passwords, device IDs)
 - **Never ask the user to disconnect/reconnect the device** on every code change — use `homey app run --remote` for rapid iteration
+- **ALWAYS ask the user to verify bugs in the UI** as you can't see it, and so can't do that yourself.
 
 ## BLE pairing flow
 

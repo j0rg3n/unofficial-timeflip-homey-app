@@ -2,6 +2,16 @@
   "title": {
     "en": "TimeFlip facet changed"
   },
+  "titleFormatted": {
+    "en": "TimeFlip facet changed for [[device]]"
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=timeflip"
+    }
+  ],
   "tokens": [
     {
       "name": "facet",

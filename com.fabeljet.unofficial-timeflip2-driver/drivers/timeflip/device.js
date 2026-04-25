@@ -121,9 +121,9 @@ class TimeFlipDevice extends Homey.Device {
       },
       async readBattery() {
         const services = await peripheral.discoverServices([]);
-        const battSvc = services.find(s => s.uuid.includes('180f'));
+        const battSvc = services.find(s => s.uuid.toLowerCase().includes('180f'));
         if (!battSvc) return 100;
-        const chars = await battSvc.discoverCharacteristics(['2a19']);
+        const chars = await battSvc.discoverCharacteristics(['00002a1900001000800000805f9b34fb']);
         if (!chars || !chars[0]) return 100;
         const data = await chars[0].read();
         return data ? data[0] : 100;
@@ -142,23 +142,7 @@ class TimeFlipDevice extends Homey.Device {
       },
     };
 
-    this._controller = new TimeFlipController(client);
-
-    try {
-      await this._controller.start({
-        blePassword: blePassword,
-        doubleTapSensitivity: doubleTapSensitivity,
-      });
-    } catch (err) {
-      this.error('Controller start failed:', err.message);
-      this._attemptReconnect(0).catch((e) => this.error(e));
-      return;
-    }
-
-    this._controller.on('disconnected', () => {
-      this.log('Device disconnected, attempting reconnect...');
-      this._attemptReconnect(0).catch((err) => this.error(err));
-    });
+this._controller = new TimeFlipController(client);
 
     let _lastSetFacet = null;
     this._controller.on('facet_changed', (data) => {
@@ -193,6 +177,11 @@ class TimeFlipDevice extends Homey.Device {
       this.setCapabilityValue('measure_battery', level).catch((err) => this.error(err));
     });
 
+    this._controller.on('disconnected', () => {
+      this.log('Device disconnected, attempting reconnect...');
+      this._attemptReconnect(0).catch((err) => this.error(err));
+    });
+
     this._controller.on('pause_changed', (paused) => {
       this.setCapabilityValue('onoff', !paused).catch((err) => this.error(err));
     });
@@ -212,6 +201,35 @@ class TimeFlipDevice extends Homey.Device {
       }
     });
 
+    this.log('Starting controller with blePassword:', blePassword ? '***' : 'empty');
+    try {
+      await this._controller.start({ blePassword });
+      this.log('Controller started successfully');
+    } catch (err) {
+      this.error('Failed to start controller:', err.message);
+    }
+
+    this.registerCapabilityListener('dim', async (value) => {
+      const brightness = Math.round(value * 100);
+      await this._controller.setBrightness(brightness);
+    });
+
+    this.registerCapabilityListener('light_hue', async (value) => {
+      const currentSat = await this.getCapabilityValue('light_saturation') || 0;
+      const currentFacet = this.getCapabilityValue('timeflip_facet') || 1;
+      const rgb = this.hsvToRgb(value, currentSat, 1);
+      await this._controller.setLedColor(currentFacet, rgb.r, rgb.g, rgb.b);
+    });
+
+    this.registerCapabilityListener('light_saturation', async (value) => {
+      const currentHue = await this.getCapabilityValue('light_hue') || 0;
+      const currentFacet = this.getCapabilityValue('timeflip_facet') || 1;
+      const rgb = this.hsvToRgb(currentHue, value, 1);
+      await this._controller.setLedColor(currentFacet, rgb.r, rgb.g, rgb.b);
+    });
+
+    this._initCapabilities();
+
     this._insightsUpdateInterval = setInterval(() => {
       if (!this.homey || !this.homey.insight) return;
       const totals = this._controller.getFacetDailyTotals();
@@ -225,6 +243,18 @@ class TimeFlipDevice extends Homey.Device {
     }, 15 * 60 * 1000);
 
     this._scheduleMidnightRollover();
+
+    this._initCapabilities();
+  }
+
+  async _initCapabilities() {
+    this.setCapabilityValue('locked', false).catch(() => {});
+    this.setCapabilityValue('onoff', true).catch(() => {});
+    this.setCapabilityValue('dim', 1).catch(() => {});
+    this.setCapabilityValue('light_hue', 0).catch(() => {});
+    this.setCapabilityValue('light_saturation', 0).catch(() => {});
+    this.setCapabilityValue('timeflip_facet', 1).catch(() => {});
+    this.setCapabilityValue('timeflip_facet_name', 'Facet 1').catch(() => {});
   }
 
   _scheduleMidnightRollover() {
@@ -290,6 +320,24 @@ class TimeFlipDevice extends Homey.Device {
     if (this._controller) {
       await this._controller.onSettings(newSettings, oldSettings);
     }
+  }
+
+  hsvToRgb(h, s, v) {
+    let r, g, b;
+    const i = Math.floor(h * 6);
+    const f = h * 6 - i;
+    const p = v * (1 - s);
+    const q = v * (1 - f * s);
+    const t = v * (1 - (1 - f) * s);
+    switch (i % 6) {
+      case 0: r = v; g = t; b = p; break;
+      case 1: r = q; g = v; b = p; break;
+      case 2: r = p; g = v; b = t; break;
+      case 3: r = p; g = q; b = v; break;
+      case 4: r = t; g = p; b = v; break;
+      case 5: r = v; g = p; b = q; break;
+    }
+    return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
   }
 }
 

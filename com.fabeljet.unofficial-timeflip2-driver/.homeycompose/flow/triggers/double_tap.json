@@ -2,6 +2,16 @@
   "title": {
     "en": "TimeFlip double-tapped"
   },
+  "titleFormatted": {
+    "en": "TimeFlip double-tapped for [[device]]"
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=timeflip"
+    }
+  ],
   "tokens": [
     {
       "name": "facet",
