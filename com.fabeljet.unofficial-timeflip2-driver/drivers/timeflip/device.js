@@ -228,6 +228,15 @@ this._controller = new TimeFlipController(client);
       await this._controller.setLedColor(currentFacet, rgb.r, rgb.g, rgb.b);
     });
 
+    this.registerCapabilityListener('onoff', async (value) => {
+      const paused = !value;  // onoff=true means NOT paused
+      await this._controller.setPause(paused);
+    });
+
+    this.registerCapabilityListener('locked', async (value) => {
+      await this._controller.setLock(value);
+    });
+
     this._initCapabilities();
 
     this._insightsUpdateInterval = setInterval(() => {
