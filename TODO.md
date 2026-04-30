@@ -114,31 +114,45 @@ All Groups 1-7 complete ✓. Groups 8+ below are remaining work.
 
 - [?] Turning the dice is spammy (many notifications) - **Pending: verify with flow card test**
 
+- [ ] Color picker doesn't change color of light.
+  
+  - Same hypotheses as brightness
+  - Additional: Need current facet context for setLedColor
+
+- [ ] Toggling on/off doesn't pause/unpause blinking.
+
 - [x] Light color, brightness capability not shown in device UI - **Fixed: re-order capabilities, re-pair device**
+
 - [x] Pause, lock capabilities not shown in device UI - **Fixed: re-pair device**
+
 - [x] Battery indicator in UI shows only "?" - **Fixed: use full UUID for battery char**
+
 - [x] Device shows on/off capability in UI, but mapping unclear - **Fixed: onoff = pause state**
+
 - [x] No flow cards to set light color, brightness - **Done: set_brightness, set_led_color actions**
+
 - [x] No flow cards for facet changes - **Fixed: added device arg, registerDeviceTriggerCard**
+
 - [ ] No flow cards for when facet names change.
+
 - [ ] Saving facet labels in advaced settings results in error "cannot read property facet_X_label".
-- [ ] Toggling on/off (pause/unpause) gives Missing Capability Listener:onoff error.
+
+- [x] Toggling on/off (pause/unpause) gives Missing Capability Listener:onoff error.
+  
   - Root cause: No registerCapabilityListener for 'onoff' capability
-  - Fix: Add listener that calls setPause(true/false)
+  - Fix: Added listener that calls setPause(true/false) **[FIXED]**
 
 - [ ] Brightness slider doesn't change brightness of light.
+  
   - Hypothesis 1: Capability listener not triggered (test with console.log)
   - Hypothesis 2: Controller method fails silently (add error handling)
   - Hypothesis 3: BLE command bytes wrong (log bytes sent)
   - Hypothesis 4: HSV→RGB conversion wrong (verify math)
 
-- [ ] Color picker doesn't change color of light.
-  - Same hypotheses as brightness
-  - Additional: Need current facet context for setLedColor
-
-- [ ] Toggling locked/unlocked gives Missing Capability Listener:locked
+- [x] Toggling locked/unlocked gives Missing Capability Listener:locked
+  
   - Root cause: No registerCapabilityListener for 'locked' capability
-  - Fix: Add listener that calls setLock(true/false)
+  - Fix: Added listener that calls setLock(true/false) **[FIXED]**
 
 ## Untested features
 
