@@ -8,7 +8,7 @@ Follow these steps for every change you make:
 
 2. Make cohesive, minimal sets of changes
 
-3. Run tests and check coverage.
+3. Run automated tests and check coverage. UI-facing changes require additional manual testing per Testing Rules.
 
 4. Use `timeout 10 homey app run --remote | ts` to smoke the app with timestamps.
 
@@ -48,6 +48,16 @@ Follow these steps for every change you make:
 - Unit tests: `test/<ModuleName>.test.js`
 - E2E tests: `test/e2e/<feature>.spec.js`
 - Mocks: `test/mocks/<MockName>.js`
+
+### Manual UI Testing
+
+- UI-facing changes (capabilities, flow cards, device settings UI, LED control, facet labels, toggles) need manual validation.
+- After UI fixes:
+  1. Prompt user with step-by-step test instructions
+  2. Provide test command: `cd com.fabeljet.unofficial-timeflip2-driver && homey app run --remote`
+  3. Stop and wait for user test results
+  4. Do not proceed/commit until user confirms fix works
+- Automated tests still required for accompanying logic changes.
 
 ## Key Learnings
 
