@@ -706,6 +706,55 @@ These are required when publishing but validated only at `publish` level (not `d
 
 ---
 
+## Bug Reporting
+
+### What Gets Logged on Every Connect
+
+On every successful BLE connection, `device.js` logs a session info block that identifies the exact software and hardware involved:
+
+```
+[INFO] App version: 1.0.0 | Device UUID: e9edcdaffa14
+[INFO] Device info — model: TimeFlip2 | firmware: 1.2.3 | hardware: 1.0
+```
+
+These lines are always present in the Homey log and should be included in every bug report.
+
+### Enabling Verbose Debug Logging
+
+Enable **BLE debug mode** in the device's Advanced Settings. On the next connect, `device.js` dumps every readable BLE characteristic across all services:
+
+```
+[DEBUG] f1196f50.../f1196f52...: 0x05
+[DEBUG] 180f/2a19: 0x62
+...
+```
+
+This provides a full snapshot of device state at connection time.
+
+### Bug Report Checklist (for users)
+
+1. Enable **BLE debug mode** in device Advanced Settings
+2. Force a reconnect — disable and re-enable the device in Homey, or restart the app
+3. Reproduce the issue
+4. Open Homey Developer Tools → App Logs
+5. Copy all log lines and include them in the issue, especially:
+   - The `[INFO]` session block (app version, device UUID, firmware)
+   - All `[DEBUG]` characteristic dump lines
+   - Any `[BLE]` command lines and error messages around the failure
+
+### What the Developer Needs
+
+| Information | Where it comes from |
+|---|---|
+| App version | `[INFO]` log line |
+| Device firmware/hardware | `[INFO]` log line |
+| Device UUID | `[INFO]` log line |
+| Device state at connect | `[DEBUG]` characteristic dump |
+| Failing command bytes + result | `[BLE] Write command` / `[BLE] Command result` log lines |
+| Error messages | `[error]` log lines |
+
+---
+
 ## Testing Notes
 
 - Run tests with `node --test` or Jest — no Homey emulator or real device required
