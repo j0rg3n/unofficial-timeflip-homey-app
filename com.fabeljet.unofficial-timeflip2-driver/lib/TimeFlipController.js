@@ -86,13 +86,31 @@ class TimeFlipController extends EventEmitter {
     } catch (err) {
       this.emit('battery_updated', 0);
     }
+
+    await this._syncStatus();
   }
 
   async stop() {
     await this.client.disconnect();
   }
 
+  async _syncStatus() {
+    try {
+      const status = await this.client.writeCommand([0x10]);
+      if (status && status.length >= 2) {
+        this._isLocked = status[0] === 0x01;
+        this._isPaused = status[1] === 0x01;
+        this.emit('lock_changed', this._isLocked);
+        this.emit('pause_changed', this._isPaused);
+      }
+    } catch (err) {
+      // non-fatal: capabilities retain their last known values
+    }
+  }
+
   async onReconnect() {
+    await this._syncStatus();
+
     const history = await this.client.readHistory(this._lastEventNumber);
     const parsed = HistoryParser.parse(history);
     this.insights.ingestHistory(parsed);
@@ -195,8 +213,39 @@ class TimeFlipController extends EventEmitter {
     this.settings.brightness = brightness;
   }
 
-  async setLedColor(facet, r, g, b) {
-    const cmd = [...CMD_SET_COLOR, facet, r, g, b];
+  async setLedColor(facet, r, g, b, format = 'rgb565') {
+    let cmd;
+    switch (format) {
+      case 'rgb565': {
+        // Pack into 16-bit: 5:6:5 format (R=5 bits, G=6 bits, B=5 bits)
+        const r5 = Math.floor(r * 31 / 255);
+        const g6 = Math.floor(g * 63 / 255);
+        const b5 = Math.floor(b * 31 / 255);
+        const rgb565 = (r5 << 11) | (g6 << 5) | b5;
+        cmd = [0x11, facet, (rgb565 >> 8) & 0xFF, rgb565 & 0xFF];
+        break;
+      }
+      case 'pct': {
+        // Percentage (0-100) in 16-bit
+        const rPct = Math.round(r * 100 / 255);
+        const gPct = Math.round(g * 100 / 255);
+        const bPct = Math.round(b * 100 / 255);
+        cmd = [0x11, facet, 0, rPct, 0, gPct, 0, bPct];
+        break;
+      }
+      case '8bit': {
+        // Raw 8-bit values (1 byte per channel)
+        cmd = [0x11, facet, r, g, b];
+        break;
+      }
+      default: { // '16bit' (original implementation)
+        const scale = (v) => Math.round(v * 65535 / 255);
+        const r16 = scale(r);
+        const g16 = scale(g);
+        const b16 = scale(b);
+        cmd = [0x11, facet, (r16 >> 8) & 0xFF, r16 & 0xFF, (g16 >> 8) & 0xFF, g16 & 0xFF, (b16 >> 8) & 0xFF, b16 & 0xFF];
+      }
+    }
     await this.client.writeCommand(cmd);
   }
 
@@ -236,6 +285,10 @@ class TimeFlipController extends EventEmitter {
     return new Promise((resolve) => {
       this.client.once('double_tap_params', resolve);
     });
+  }
+
+  async writeRawCommand(bytes) {
+    return await this.client.writeCommand(bytes);
   }
 
   getFacetDailyTotals() {

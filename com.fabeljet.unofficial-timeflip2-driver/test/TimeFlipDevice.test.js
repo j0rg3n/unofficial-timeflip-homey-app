@@ -17,8 +17,8 @@ describe('TimeFlipDevice integration', () => {
   describe('initialization', () => {
     it('starts controller and authenticates', async () => {
       await controller.start({ blePassword: '000000', doubleTapSensitivity: 'medium' });
-      const lastCmd = mockBle.getLastSentCommand();
-      assert.strictEqual(lastCmd.type, 'password');
+      const cmds = mockBle.getSentCommands();
+      assert.ok(cmds.some((c) => c.type === 'password'), 'password should have been sent');
     });
 
     it('throws on invalid password', async () => {

@@ -17,6 +17,11 @@ class TimeFlipApp extends Homey.App {
       doubleTapTrigger.trigger(device, tokens).catch(this.error);
     });
 
+    const facetLabelChangedTrigger = this.homey.flow.getDeviceTriggerCard('facet_label_changed');
+    this.on('trigger:facet_label_changed', ({ device, tokens }) => {
+      facetLabelChangedTrigger.trigger(device, tokens).catch(this.error);
+    });
+
     const facetIsCondition = this.homey.flow.getConditionCard('facet_is');
     facetIsCondition.registerRunListener(async (args, state) => {
       return state.device.getCapabilityValue('timeflip_facet') === parseInt(args.facet, 10);
