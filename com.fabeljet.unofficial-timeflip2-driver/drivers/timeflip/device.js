@@ -54,6 +54,7 @@ class TimeFlipDevice extends Homey.Device {
 
     this._blePeripheral = await blePeripheral.connect();
     this.log('Connected to BLE peripheral');
+    this._logSessionInfo(this._blePeripheral).catch(() => {});
 
     this._blePeripheral.on('disconnect', () => {
       this.log('BLE peripheral disconnected');
@@ -269,25 +270,10 @@ this._controller = new TimeFlipController(client);
         this.log('[BLE] Failed to read system state: ' + err.message);
       }
 
-      // Enumerate all characteristics to understand device state
-      try {
-        const services = await peripheral.discoverServices([]);
-        const tfSvc = services.find(s => s.uuid.includes('f1196f50'));
-        if (tfSvc) {
-          const chars = await tfSvc.discoverCharacteristics([]);
-          this.log('[BLE] TimeFlip characteristics:');
-          for (const char of chars) {
-            try {
-              const value = await char.read();
-              this.log(`[BLE]   ${char.uuid}: ${Array.from(value).map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')}`);
-            } catch (e) {
-              this.log(`[BLE]   ${char.uuid}: (read failed: ${e.message})`);
-            }
-          }
-        }
-      } catch (err) {
-        this.log('[BLE] Failed to enumerate characteristics: ' + err.message);
+      if (this.getSetting('ble_debug_mode')) {
+        this._dumpAllCharacteristics(peripheral).catch((err) => this.log('[DEBUG] Char dump failed:', err.message));
       }
+
       if (this.getSetting('ble_test_mode')) {
         this._runBleTestSequence().catch((err) => this.error('[TEST] sequence failed:', err.message));
       }
@@ -639,6 +625,39 @@ this._controller = new TimeFlipController(client);
     step('╚══════════════════════════════════════════════════╝');
     step('Pause/lock: check PASS/FAIL lines above.');
     step('Brightness/color: note what you observed on the device.');
+  }
+
+  async _logSessionInfo(peripheral) {
+    const appVersion = this.homey.app.manifest.version;
+    const peripheralUuid = this.getStore().peripheralUuid || peripheral.uuid || 'unknown';
+    this.log(`[INFO] App version: ${appVersion} | Device UUID: ${peripheralUuid}`);
+    try {
+      const readStr = async (uuid) => {
+        const buf = await peripheral.read('180a', uuid);
+        return Buffer.from(buf).toString('utf8').replace(/\0/g, '').trim();
+      };
+      const model    = await readStr('2a24').catch(() => '?');
+      const firmware = await readStr('2a26').catch(() => '?');
+      const hardware = await readStr('2a27').catch(() => '?');
+      this.log(`[INFO] Device info — model: ${model} | firmware: ${firmware} | hardware: ${hardware}`);
+    } catch (err) {
+      this.log('[INFO] Could not read device info service:', err.message);
+    }
+  }
+
+  async _dumpAllCharacteristics(peripheral) {
+    const services = await peripheral.discoverServices([]);
+    for (const svc of services) {
+      const chars = await svc.discoverCharacteristics([]);
+      for (const char of chars) {
+        try {
+          const value = await char.read();
+          this.log(`[DEBUG] ${svc.uuid}/${char.uuid}: ${Array.from(value).map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')}`);
+        } catch (e) {
+          this.log(`[DEBUG] ${svc.uuid}/${char.uuid}: (not readable)`);
+        }
+      }
+    }
   }
 
   _scheduleColorUpdate() {

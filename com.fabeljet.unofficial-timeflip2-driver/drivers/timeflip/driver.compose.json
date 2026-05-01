@@ -31,6 +31,7 @@
   "settings": [
     { "id": "ble_password", "type": "text", "label": { "en": "BLE Password" }, "value": "000000", "hint": { "en": "6-digit password" } },
     { "id": "ble_test_mode", "type": "checkbox", "label": { "en": "BLE test mode" }, "value": false, "hint": { "en": "On next connect, run an automated BLE command sequence to diagnose brightness, pause and color. Watch the device LED and check Homey logs for [TEST] output." } },
+    { "id": "ble_debug_mode", "type": "checkbox", "label": { "en": "BLE debug mode" }, "value": false, "hint": { "en": "On next connect, dump all BLE characteristics to the Homey log. Enable this when reporting a bug — share the [DEBUG] log output with the developer." } },
     { "id": "double_tap_sensitivity", "type": "dropdown", "label": { "en": "Double-tap sensitivity" }, "value": "medium", "values": [
       { "id": "low", "label": { "en": "Low" } },
       { "id": "medium", "label": { "en": "Medium" } },
