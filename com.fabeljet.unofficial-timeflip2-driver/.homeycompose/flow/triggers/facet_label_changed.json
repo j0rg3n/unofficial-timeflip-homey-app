@@ -1,0 +1,31 @@
+{
+  "title": {
+    "en": "TimeFlip facet label changed"
+  },
+  "titleFormatted": {
+    "en": "TimeFlip facet label changed for [[device]]"
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=timeflip"
+    }
+  ],
+  "tokens": [
+    {
+      "name": "facet",
+      "type": "number",
+      "title": {
+        "en": "Facet"
+      }
+    },
+    {
+      "name": "facet_name",
+      "type": "string",
+      "title": {
+        "en": "Facet name"
+      }
+    }
+  ]
+}

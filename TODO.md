@@ -166,3 +166,11 @@ All Groups 1-7 complete ✓. Groups 8+ below are remaining work.
 - [ ] Verify battery reporting works
 - [ ] Verify facet change triggers work
 - [ ] Verify double-tap triggers work
+- [ ] Verify debug info appears in logs on connect:
+  - `[INFO]` line with app version and peripheral UUID always logged
+  - `[INFO]` line with model / firmware / hardware revision from service `0x180a`
+  - `[DEBUG]` characteristic dump logged only when BLE debug mode is enabled in settings
+- [ ] Document bug report procedure for users:
+  - Enable **BLE debug mode** in device settings (Advanced)
+  - Force a reconnect (disable/enable the device, or restart the app)
+  - Copy the Homey log from Developer Tools and include all `[INFO]` and `[DEBUG]` lines

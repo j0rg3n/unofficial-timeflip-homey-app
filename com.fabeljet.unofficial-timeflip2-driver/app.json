@@ -629,6 +629,17 @@
           }
         },
         {
+          "id": "ble_debug_mode",
+          "type": "checkbox",
+          "label": {
+            "en": "BLE debug mode"
+          },
+          "value": false,
+          "hint": {
+            "en": "On next connect, dump all BLE characteristics to the Homey log. Enable this when reporting a bug — share the [DEBUG] log output with the developer."
+          }
+        },
+        {
           "id": "double_tap_sensitivity",
           "type": "dropdown",
           "label": {
