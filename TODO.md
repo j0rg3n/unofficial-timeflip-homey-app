@@ -114,12 +114,9 @@ All Groups 1-7 complete ✓. Groups 8+ below are remaining work.
 
 - [?] Turning the dice is spammy (many notifications) - **Pending: verify with flow card test**
 
-- [ ] Color picker doesn't change color of light.
-  
-  - Same hypotheses as brightness
-  - Additional: Need current facet context for setLedColor
+- [x] Color picker doesn't change color of light. **Fixed: setLedColor now sends 2 bytes per RGB channel (16-bit) per SPEC §12, added command queue to prevent "In Progress" BLE errors**
 
-- [ ] Toggling on/off doesn't pause/unpause blinking.
+- [x] Toggling on/off doesn't pause/unpause blinking. **Fixed: confirmed working via BLE test — CMD 0x06 0x01/0x02, 4/4 PASS with STATUS verification. Root cause was wrong device password blocking all commands.**
 
 - [x] Light color, brightness capability not shown in device UI - **Fixed: re-order capabilities, re-pair device**
 
@@ -133,26 +130,23 @@ All Groups 1-7 complete ✓. Groups 8+ below are remaining work.
 
 - [x] No flow cards for facet changes - **Fixed: added device arg, registerDeviceTriggerCard**
 
-- [ ] No flow cards for when facet names change.
+- [x] No flow cards for when facet names change. **Fixed: facet_label_changed trigger fires from onSettings when a label changes.**
 
-- [ ] Saving facet labels in advaced settings results in error "cannot read property facet_X_label".
+- [x] Saving facet labels in advanced settings results in error "cannot read property facet_X_label". **Fixed: onSettings signature was wrong (Homey SDK v3 passes `{ oldSettings, newSettings, changedKeys }` as one object).**
 
 - [x] Toggling on/off (pause/unpause) gives Missing Capability Listener:onoff error.
   
   - Root cause: No registerCapabilityListener for 'onoff' capability
   - Fix: Added listener that calls setPause(true/false) **[FIXED]**
 
-- [ ] Brightness slider doesn't change brightness of light.
-  
-  - Hypothesis 1: Capability listener not triggered (test with console.log)
-  - Hypothesis 2: Controller method fails silently (add error handling)
-  - Hypothesis 3: BLE command bytes wrong (log bytes sent)
-  - Hypothesis 4: HSV→RGB conversion wrong (verify math)
+- [x] Brightness slider doesn't change brightness of light. **Fixed: root cause was wrong device password blocking all commands. CMD 0x09 confirmed working on device after password reset via CMD 0x30.**
 
 - [x] Toggling locked/unlocked gives Missing Capability Listener:locked
   
   - Root cause: No registerCapabilityListener for 'locked' capability
-  - Fix: Added listener that calls setLock(true/false) **[FIXED]**
+  - Fix: Added listener that calls setLock(true/false) **[FIXED]** — confirmed working on device (locks accelerometer as expected)
+
+- [x] Color picker sends conflicting commands (flash of new color, reverts to old color). **Fixed: hue/saturation listeners now debounce 200ms so both changes coalesce into one setLedColor call.**
 
 ## Untested features
 

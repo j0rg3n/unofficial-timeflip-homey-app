@@ -2,6 +2,7 @@
 
 const {
   SERVICE_UUID,
+  CHAR_EVENTS,
   CHAR_FACETS,
   CHAR_CMD_RESULT,
   CHAR_COMMAND,
@@ -11,12 +12,14 @@ const {
 } = require('./constants');
 
 class TimeFlipClient {
-  constructor(peripheral) {
+  constructor(peripheral, logFn) {
     this.peripheral = peripheral;
     this.connected = false;
     this._facetCallback = null;
     this._doubleTapCallback = null;
     this._disconnectCallback = null;
+    this._cmdQueue = Promise.resolve();
+    this._log = logFn || console.log;
   }
 
   async connect() {
@@ -26,6 +29,7 @@ class TimeFlipClient {
     }
     const service = services[0];
 
+    this.charEvents = await service.discoverCharacteristic(CHAR_EVENTS);
     this.charFacets = await service.discoverCharacteristic(CHAR_FACETS);
     this.charCmdResult = await service.discoverCharacteristic(CHAR_CMD_RESULT);
     this.charCommand = await service.discoverCharacteristic(CHAR_COMMAND);
@@ -47,8 +51,11 @@ class TimeFlipClient {
   async sendPassword(password) {
     const pw = Buffer.from(password.padEnd(6, '0').slice(0, 6));
     await this.charPassword.write(pw, false);
-    const result = await this.charCmdResult.read();
-    return result[0] === 0x01;
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    const events = await this.charEvents.read();
+    const eventsStr = Buffer.from(events).toString('ascii').replace(/[^\x20-\x7e]/g, '?');
+    this._log(`[BLE] Password auth result (CHAR_EVENTS): ${eventsStr}`);
+    return eventsStr.toLowerCase().includes('password ok');
   }
 
   async subscribeToFacets(callback) {
@@ -101,10 +108,17 @@ class TimeFlipClient {
   }
 
   async writeCommand(bytes) {
+    this._cmdQueue = this._cmdQueue.then(() => this._writeCommandInternal(bytes));
+    return await this._cmdQueue;
+  }
+
+  async _writeCommandInternal(bytes) {
+    this._log(`[BLE] Write command: ${bytes.map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')}`);
     const data = Buffer.from(bytes);
     await this.charCommand.write(data, false);
     await new Promise((resolve) => setTimeout(resolve, 50));
     const result = await this.charCmdResult.read();
+    this._log(`[BLE] Command result: ${result.map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')}`);
     return result;
   }
 

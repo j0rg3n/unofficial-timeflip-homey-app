@@ -51,8 +51,40 @@ Use full 128-bit UUIDs throughout (Homey v6+ default).
 Must be written to `F1196F57` on **every connect** (the characteristic resets on disconnect).
 
 - Default: ASCII `000000` = `[0x30, 0x30, 0x30, 0x30, 0x30, 0x30]`
-- Response in `F1196F53`: first byte `0x01` = correct, `0x02` = wrong
-- Command result format: `0xXX 0x02` = success, `0xXX 0x01` = error
+
+**Checking authentication success:** Read `F1196F51` (CHAR_EVENTS) ~500ms after writing the password. It returns an ASCII string:
+- `"password OK"` — authenticated, commands will be accepted
+- `"password error"` — wrong password; device disconnects ~15s later
+
+**Do not** check `F1196F53` (CHAR_CMD_RESULT) for password validation — that characteristic holds stale data from the last `F1196F54` write and is unrelated to password authentication. Checking it gives false positives and false negatives.
+
+```js
+await peripheral.write(SERVICE, CHAR_PASSWORD, passwordBuf);
+await sleep(500);
+const events = Buffer.from(await peripheral.read(SERVICE, CHAR_EVENTS)).toString('ascii');
+const authenticated = events.toLowerCase().includes('password ok');
+```
+
+### CHAR_CMD_RESULT (`F1196F53`) Semantics
+
+`F1196F53` holds the result of the last `F1196F54` (CHAR_COMMAND) write. It is **not** updated by password writes. Its idle value on this device is `0x02` for most commands — **do not interpret `0x02` as a command rejection**. Validate command success by observing physical device behavior (e.g. reading STATUS after a lock/pause command), not by checking this characteristic's value.
+
+### Password Recovery (Unknown / Non-Default Password)
+
+If the device has a non-default password (set via the official TimeFlip app), it will reject all `F1196F54` writes after a successful BLE connection and disconnect ~15s later.
+
+CMD `0x30` (set-password) accepts new password bytes **without requiring prior authentication**. This is the only recovery path — `CMD 0xFF` (factory reset) requires auth first and power cycling does NOT reset the password (stored in NVM).
+
+```js
+// Write to F1196F54 (CHAR_COMMAND), not CHAR_PASSWORD
+const newPassword = '000000';
+const cmd = [0x30, ...Buffer.from(newPassword)];
+await peripheral.write(SERVICE, CHAR_COMMAND, Buffer.from(cmd));
+await sleep(500);
+// Now authenticate normally with the new password
+```
+
+The password is stored in flash and survives power cycles.
 
 ### Facet Notifications (`F1196F52`)
 
@@ -280,7 +312,7 @@ for (const [id, adv] of Object.entries(advertisements)) {
 1. `ble.find(uuid)` → get advertisement
 2. `advertisement.connect()` → get peripheral
 3. `peripheral.discoverServices([])` → find TimeFlip service
-4. Authenticate: write password to `f1196f57`, read result from `f1196f53`
+4. Authenticate: write password to `f1196f57`, wait ~500ms, read `f1196f51` (CHAR_EVENTS) and check for `"password OK"`
 5. Subscribe to notifications on `f1196f52` (facet) and `f1196f55` (double-tap)
 6. Listen for `peripheral.on('disconnect', callback)` for reconnection
 
@@ -421,9 +453,9 @@ Pairing happens entirely over BLE — no cloud login, no TimeFlip account requir
 
 1. **Scan** — Homey discovers BLE devices advertising `F1196F50-...`. Show list by device name.
 2. **Select** — User picks their TimeFlip from the list.
-3. **Enter BLE password** — Input field, pre-filled with `000000`. Homey connects, writes password to `F1196F57`, reads response from `F1196F53`.
-   - `0x01` = success → proceed
-   - `0x02` = wrong → show inline error, allow retry
+3. **Enter BLE password** — Input field, pre-filled with `000000`. Homey connects, writes password to `F1196F57`, waits ~500ms, reads `F1196F51` (CHAR_EVENTS).
+   - `"password OK"` → proceed
+   - `"password error"` → show inline error, allow retry
 4. **Done** — Device stored with `{ id: peripheralId }` in `getData()`, `{ blePassword: '000000' }` in `getStore()`.
 
 ### Post-pairing
@@ -514,6 +546,77 @@ const HISTORY_END        = [0xFF, 0xFF, 0xFF, 0xFF];
 ---
 
 ## Implementation Notes & Learnings
+
+### LED Color Format (CMD `0x11`)
+
+The device requires **16-bit per channel** (2 bytes each for R, G, B), for a total of 8 bytes:
+
+```
+0x11  0xNN  0xRH 0xRL  0xGH 0xGL  0xBH 0xBL
+       facet   R (16-bit)   G (16-bit)   B (16-bit)
+```
+
+Scale 8-bit (0–255) to 16-bit: `Math.round(v * 65535 / 255)`.
+
+Other formats **do not produce correct colors** on this device:
+- 8-bit per channel (`[0x11, facet, R, G, B]`) — wrong
+- RGB565 packed into 2 bytes — wrong
+- Percentage × 100 in 16-bit — wrong
+
+CMD `0x11` stores the color for a specific facet number but does not immediately re-light the LED if that facet is not currently active. The stored color takes effect on the next facet-change event for that facet. To update the visible LED immediately, send the command for the facet that is currently active.
+
+### LED Color Picker Debouncing
+
+Homey fires separate `light_hue` and `light_saturation` capability changes when the user drags the color picker, sometimes within milliseconds of each other. If each change immediately triggers `setLedColor`, two conflicting BLE commands hit the device in rapid succession — the LED flashes the first color then reverts to the second (or vice versa).
+
+Fix: update in-memory hue/saturation immediately, but debounce the actual BLE write by ~200ms so both changes coalesce into one command.
+
+```js
+registerCapabilityListener('light_hue', (value) => {
+  this._currentHue = value;
+  this._scheduleColorUpdate();  // debounced 200ms
+});
+registerCapabilityListener('light_saturation', (value) => {
+  this._currentSat = value;
+  this._scheduleColorUpdate();
+});
+```
+
+### Lock Mode Behavior
+
+Lock mode (`CMD 0x04 0x01`) freezes the accelerometer so that physically moving or flipping the device does **not** trigger facet-change events. It does not affect BLE communication — authenticated commands continue to work normally while locked.
+
+### STATUS Response (`CMD 0x10`)
+
+When authenticated, returns 20 bytes. Only the first two are meaningful:
+- `byte[0]`: `0x01` = locked, `0x02` = unlocked
+- `byte[1]`: `0x01` = paused, `0x02` = running
+
+When **not** authenticated, returns only 1 stale byte. Always authenticate before reading STATUS.
+
+**Call STATUS on every connect and reconnect** to sync `onoff` (pause) and `locked` capability values from ground truth. The device state can change while Homey is disconnected (e.g. paused via double-tap). Without this sync, the Homey UI will show stale state.
+
+```js
+const status = await client.writeCommand([0x10]);
+if (status && status.length >= 2) {
+  const isLocked = status[0] === 0x01;
+  const isPaused = status[1] === 0x01;
+  emit('lock_changed', isLocked);
+  emit('pause_changed', isPaused);
+}
+```
+
+### Homey SDK v3: `onSettings` Signature
+
+SDK v3 passes a **single destructured object** to `onSettings`, not two separate arguments:
+
+```js
+// CORRECT
+async onSettings({ oldSettings, newSettings, changedKeys }) { ... }
+
+// WRONG — oldSettings receives the whole object, newSettings is undefined
+async onSettings(oldSettings, newSettings) { ... }
+```
 
 ### Custom Capabilities
 
@@ -610,6 +713,54 @@ These are required when publishing but validated only at `publish` level (not `d
 - `MockHomeyDevice` stubs out capability sets, Flow trigger fires, settings reads — lets you assert that `device.js` wires things correctly without a real Homey
 - `HistoryParser` and `InsightsAccumulator` are pure functions / stateful classes with no external dependencies — test with raw byte buffers and time fixtures
 - Test the reconnect → history catch-up path explicitly: simulate disconnect, push history fixture events to mock, reconnect, assert Insights totals are correct
+
+---
+
+## Future / Optional Features
+
+### Per-Facet Pomodoro Timer (`CMD 0x13` / `CMD 0x14`)
+
+The device has a built-in per-facet task timer with pomodoro support, configurable via BLE.
+
+**Set facet task params (`CMD 0x13`):**
+
+```
+0x13  0xNN  0xPP  0xTT 0xTT 0xTT 0xTT
+      facet  mode  timer limit (seconds, uint32 BE)
+```
+
+- `mode 0x00` — simple stopwatch (no limit)
+- `mode 0x01` — pomodoro (count down from limit, then alert)
+
+**Read facet task params (`CMD 0x14`):**
+
+```
+Write: 0x14 0xNN   (facet number)
+Read from F1196F53: 0x14 0xNN 0xPP 0xTT 0xTT 0xTT 0xTT 0xCC 0xCC 0xCC 0xCC
+                                          timer limit (s)       elapsed (s)
+```
+
+**Homey integration ideas:**
+
+- Add a `pomodoro_duration` per-facet setting (minutes; 0 = simple mode)
+- Apply via `CMD 0x13` when facet settings change
+- Expose elapsed time from `CMD 0x14` as a `timeflip_elapsed` capability
+- Fire a `pomodoro_complete` Flow trigger when a facet is flipped away from a pomodoro facet after its timer completes (detectable from history: duration ≥ timer limit)
+
+**Implementation note:** The device handles the timer internally — Homey only needs to configure it and read elapsed time. The device does not push a notification when the timer completes; the signal must be inferred from facet-change events and history.
+
+### Device Name Sync (`CMD 0x15`)
+
+```
+0x15  0xNN  0xZZ...
+      char count  ASCII name (max 18 chars)
+```
+
+Could sync the Homey device name to the BLE peripheral name, so it appears correctly in BLE scanners and the official TimeFlip app.
+
+### Reset Task Info (`CMD 0xFE`)
+
+Clears the per-facet timer state (elapsed time) stored on the device. Useful as a maintenance action card: "Reset TimeFlip timers."
 
 ---
 

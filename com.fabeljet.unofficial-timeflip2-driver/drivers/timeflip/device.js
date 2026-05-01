@@ -11,6 +11,9 @@ class TimeFlipDevice extends Homey.Device {
     this._controller = null;
     this._facetLabels = {};
     this._blePeripheral = null;
+    this._currentHue = 0;
+    this._currentSat = 0;
+    this._colorUpdateTimer = null;
 
     for (let i = 1; i <= 12; i++) {
       const label = this.getSetting('facet_' + i + '_label');
@@ -65,6 +68,7 @@ class TimeFlipDevice extends Homey.Device {
     this.log('Connecting with password');
 
     const CLIENT_SERVICE = 'f1196f5071a411e6bdf40800200c9a66';
+    const CHAR_EVENTS = 'f1196f5171a411e6bdf40800200c9a66';
     const CHAR_PASSWORD = 'f1196f5771a411e6bdf40800200c9a66';
     const CHAR_RESULT = 'f1196f5371a411e6bdf40800200c9a66';
     const CHAR_FACET = 'f1196f5271a411e6bdf40800200c9a66';
@@ -72,9 +76,12 @@ class TimeFlipDevice extends Homey.Device {
     const CHAR_CMD = 'f1196f5471a411e6bdf40800200c9a66';
     const BATTERY_SERVICE = '180f';
     const BATTERY_CHAR = '2a19';
+    const CHAR_SYSTEM_STATE = 'f1196f5671a411e6bdf40800200c9a66';
     
+    const log = this.log.bind(this);
     const client = {
       connected: false,
+      _cmdQueue: Promise.resolve(),
       async connect() {
         this.connected = true;
         return true;
@@ -85,9 +92,13 @@ class TimeFlipDevice extends Homey.Device {
       },
       async sendPassword(pw) {
         const passwordBuf = Buffer.from(String(pw).padEnd(6, '0').slice(0, 6));
+        log('[BLE] Sending password bytes: ' + Array.from(passwordBuf).map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' '));
         await peripheral.write(CLIENT_SERVICE, CHAR_PASSWORD, passwordBuf);
-        const result = await peripheral.read(CLIENT_SERVICE, CHAR_RESULT);
-        return result[0] === 0x01;
+        await new Promise((resolve) => setTimeout(resolve, 400));
+        const events = await peripheral.read(CLIENT_SERVICE, CHAR_EVENTS);
+        const eventsStr = Buffer.from(events).toString('ascii').replace(/[^\x20-\x7e]/g, '?');
+        log('[BLE] Password auth result (CHAR_EVENTS): ' + eventsStr);
+        return !eventsStr.includes('password error');
       },
       async readFacet() {
         const services = await peripheral.discoverServices([]);
@@ -128,12 +139,43 @@ class TimeFlipDevice extends Homey.Device {
         const data = await chars[0].read();
         return data ? data[0] : 100;
       },
+      async readEvents() {
+        const data = await peripheral.read(CLIENT_SERVICE, CHAR_EVENTS);
+        return Array.from(data).map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')
+          + ' ("' + Buffer.from(data).toString('ascii').replace(/[^\x20-\x7e]/g, '?') + '")';
+      },
+      async probePassword(rawBytes) {
+        log('[BLE] Probing password: ' + rawBytes.map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+        await peripheral.write(CLIENT_SERVICE, CHAR_PASSWORD, Buffer.from(rawBytes));
+        await new Promise((resolve) => setTimeout(resolve, 400));
+        const events = await peripheral.read(CLIENT_SERVICE, CHAR_EVENTS);
+        const eventsStr = Buffer.from(events).toString('ascii').replace(/[^\x20-\x7e]/g, '?');
+        const resultBuf = await peripheral.read(CLIENT_SERVICE, CHAR_RESULT);
+        const resultHex = Array.from(resultBuf).map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ');
+        return { eventsStr, resultHex, accepted: !eventsStr.includes('password error') };
+      },
       async readHistory(fromEvent) {
         return [];
       },
       async writeCommand(bytes) {
+        this._cmdQueue = this._cmdQueue.then(() => this._writeCommandInternal(bytes));
+        return await this._cmdQueue;
+      },
+      async _writeCommandInternal(bytes) {
+        log('[BLE] Write command: ' + bytes.map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' '));
         await peripheral.write(CLIENT_SERVICE, CHAR_CMD, Buffer.from(bytes));
-        return [0x00, 0x02];
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        try {
+          // Read actual command result from device
+          const result = await peripheral.read(CLIENT_SERVICE, CHAR_RESULT);
+          log('[BLE] Command result: ' + Array.from(result).map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+          return result;
+        } catch (err) {
+          log('[BLE] Failed to read command result: ' + err.message);
+          return [0x00, 0x01]; // Return error
+        }
       },
       on(event, cb) {
         if (event === 'disconnect') {
@@ -161,6 +203,7 @@ this._controller = new TimeFlipController(client);
       this.setCapabilityValue('timeflip_facet_name', facetName).catch((err) => this.error(err));
       this.setCapabilityValue('onoff', true).catch((err) => this.error(err));
       this.homey.app.emit('trigger:facet_changed', { device: this, tokens });
+      this._applyColorToFacet(facetNum);
     });
 
     this._controller.on('double_tap', (data) => {
@@ -201,31 +244,74 @@ this._controller = new TimeFlipController(client);
       }
     });
 
+    // In BLE test mode, run diagnostic sequence BEFORE sending the password —
+    // this avoids the 15-second kick the device gives after a wrong password
+    // and gives the probe time to find the correct password or trigger a reset.
+    if (this.getSetting('ble_test_mode')) {
+      this.log('[TEST] BLE test mode: running diagnostic sequence before normal auth');
+      this._runBleTestSequence().catch((err) => this.error('[TEST] sequence failed:', err.message));
+      return;
+    }
+
     this.log('Starting controller with blePassword:', blePassword ? '***' : 'empty');
     try {
       await this._controller.start({ blePassword });
       this.log('Controller started successfully');
+      this._currentHue = await this.getCapabilityValue('light_hue') || 0;
+      this._currentSat = await this.getCapabilityValue('light_saturation') || 0;
+      this.log(`Initialized color state: H=${this._currentHue} S=${this._currentSat}`);
+
+      // Read system state to check if color sync is needed
+      try {
+        const systemState = await peripheral.read(CLIENT_SERVICE, CHAR_SYSTEM_STATE);
+        this.log('[BLE] System state: ' + Array.from(systemState).map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+      } catch (err) {
+        this.log('[BLE] Failed to read system state: ' + err.message);
+      }
+
+      // Enumerate all characteristics to understand device state
+      try {
+        const services = await peripheral.discoverServices([]);
+        const tfSvc = services.find(s => s.uuid.includes('f1196f50'));
+        if (tfSvc) {
+          const chars = await tfSvc.discoverCharacteristics([]);
+          this.log('[BLE] TimeFlip characteristics:');
+          for (const char of chars) {
+            try {
+              const value = await char.read();
+              this.log(`[BLE]   ${char.uuid}: ${Array.from(value).map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')}`);
+            } catch (e) {
+              this.log(`[BLE]   ${char.uuid}: (read failed: ${e.message})`);
+            }
+          }
+        }
+      } catch (err) {
+        this.log('[BLE] Failed to enumerate characteristics: ' + err.message);
+      }
+      if (this.getSetting('ble_test_mode')) {
+        this._runBleTestSequence().catch((err) => this.error('[TEST] sequence failed:', err.message));
+      }
     } catch (err) {
       this.error('Failed to start controller:', err.message);
     }
 
     this.registerCapabilityListener('dim', async (value) => {
       const brightness = Math.round(value * 100);
-      await this._controller.setBrightness(brightness);
+      try {
+        await this._controller.setBrightness(brightness);
+      } catch (err) {
+        this.error('Failed to set brightness:', err.message);
+      }
     });
 
     this.registerCapabilityListener('light_hue', async (value) => {
-      const currentSat = await this.getCapabilityValue('light_saturation') || 0;
-      const currentFacet = this.getCapabilityValue('timeflip_facet') || 1;
-      const rgb = this.hsvToRgb(value, currentSat, 1);
-      await this._controller.setLedColor(currentFacet, rgb.r, rgb.g, rgb.b);
+      this._currentHue = value;
+      this._scheduleColorUpdate();
     });
 
     this.registerCapabilityListener('light_saturation', async (value) => {
-      const currentHue = await this.getCapabilityValue('light_hue') || 0;
-      const currentFacet = this.getCapabilityValue('timeflip_facet') || 1;
-      const rgb = this.hsvToRgb(currentHue, value, 1);
-      await this._controller.setLedColor(currentFacet, rgb.r, rgb.g, rgb.b);
+      this._currentSat = value;
+      this._scheduleColorUpdate();
     });
 
     this.registerCapabilityListener('onoff', async (value) => {
@@ -252,8 +338,6 @@ this._controller = new TimeFlipController(client);
     }, 15 * 60 * 1000);
 
     this._scheduleMidnightRollover();
-
-    this._initCapabilities();
   }
 
   async _initCapabilities() {
@@ -322,9 +406,18 @@ this._controller = new TimeFlipController(client);
     }, delay);
   }
 
-  async onSettings(oldSettings, newSettings) {
+  async onSettings({ oldSettings, newSettings, changedKeys }) {
     for (let i = 1; i <= 12; i++) {
-      this._facetLabels[i] = newSettings['facet_' + i + '_label'] || ('Facet ' + i);
+      const labelKey = 'facet_' + i + '_label';
+      const newLabel = newSettings[labelKey] || ('Facet ' + i);
+      const oldLabel = (oldSettings && oldSettings[labelKey]) || ('Facet ' + i);
+      this._facetLabels[i] = newLabel;
+      if (newLabel !== oldLabel) {
+        this.homey.app.emit('trigger:facet_label_changed', {
+          device: this,
+          tokens: { facet: i, facet_name: newLabel },
+        });
+      }
     }
     if (this._controller) {
       await this._controller.onSettings(newSettings, oldSettings);
@@ -347,6 +440,225 @@ this._controller = new TimeFlipController(client);
       case 5: r = v; g = p; b = q; break;
     }
     return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
+  }
+
+  async _runBleTestSequence() {
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const step = (msg) => this.log(`[TEST] ${msg}`);
+    const ok = (msg) => this.log(`[TEST] PASS  ${msg}`);
+    const fail = (msg) => this.error(`[TEST] FAIL  ${msg}`);
+
+    // Control commands (brightness, pause, color) do NOT update CHAR_RESULT.
+    // Only query commands (0x10 status, 0x07 time, 0x14 facet params) do.
+    // fire() sends a control command and logs it — no PASS/FAIL from CHAR_RESULT.
+    // queryStatus() sends 0x10 and reads the 4-byte status response for verification.
+    const fire = async (label, bytes, expectDesc) => {
+      const hex = bytes.map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ');
+      step(`${label} → [${hex}]`);
+      step(`  Observe: ${expectDesc}`);
+      try {
+        await this._controller.writeRawCommand(bytes);
+        step(`  Sent OK`);
+      } catch (err) {
+        fail(`${label} threw: ${err.message}`);
+      }
+    };
+
+    const queryStatus = async (label) => {
+      try {
+        const res = await this._controller.writeRawCommand([0x10]);
+        const hex = Array.from(res).map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ');
+        // Expected: [lockMode, pauseMode, autoPauseHi, autoPauseLo]
+        // 0x01 = ON, 0x02 = OFF (matches CMD_LOCK_ON/OFF and CMD_PAUSE_ON/OFF second bytes)
+        const lockStr = res[0] === 0x01 ? 'LOCKED' : res[0] === 0x02 ? 'unlocked' : `0x${(res[0] || 0).toString(16)}`;
+        const pauseStr = res[1] === 0x01 ? 'PAUSED' : res[1] === 0x02 ? 'running' : `0x${(res[1] || 0).toString(16)}`;
+        step(`  ${label} status: lock=${lockStr} pause=${pauseStr} raw=[${hex}]`);
+        return res;
+      } catch (err) {
+        fail(`Status query threw: ${err.message}`);
+        return [];
+      }
+    };
+
+    step('');
+    step('╔══════════════════════════════════════════════════╗');
+    step('║          BLE TEST SEQUENCE STARTING              ║');
+    step('╚══════════════════════════════════════════════════╝');
+    step('Keep the TimeFlip in BLE range and watch its LED.');
+    step('Control commands have no CHAR_RESULT response —');
+    step('device observation is the only ground truth for');
+    step('brightness and color. Pause/lock verified via STATUS.');
+    step('');
+
+    // ── Step 0: try set-password blind (no prior auth) ───────────────────────
+    // CMD 0x30 0xNN×6 = "set password". If the device allows this without auth,
+    // we can force the password to "000000" and then authenticate normally.
+    step('── Step 0: Blind set-password attempt (CMD 0x30) ──────────────────');
+    step('Sending [0x30 0x30×6] = "set password to 000000" without prior auth.');
+    step('If accepted, a subsequent probe should then show "password ok".');
+    try {
+      await this._controller.client.writeCommand([0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30]);
+      await sleep(600);
+      const eventsAfterSetPw = await this._controller.client.readEvents();
+      step(`  CHAR_EVENTS after blind set-password: ${eventsAfterSetPw}`);
+    } catch (err) {
+      fail(`  Blind set-password threw: ${err.message}`);
+    }
+
+    // ── Step 0b: try factory reset blind ─────────────────────────────────────
+    step('── Step 0b: Blind factory reset attempt (CMD 0xFF) ────────────────');
+    step('Sending [0xFF] = factory reset without prior auth.');
+    step('If it works, device should reboot; reconnect and retry "000000".');
+    try {
+      await this._controller.client.writeCommand([0xFF]);
+      await sleep(2000);
+      const eventsAfterReset = await this._controller.client.readEvents();
+      step(`  CHAR_EVENTS after blind factory reset: ${eventsAfterReset}`);
+    } catch (err) {
+      step(`  Blind factory reset threw (may be expected): ${err.message}`);
+    }
+    await sleep(1000);
+
+    // ── Password probe ────────────────────────────────────────────────────────
+    step('── Password probe ───────────────────────────────────────────────────');
+    step('Trying password encodings. Reading CHAR_EVENTS after each.');
+    step('"password error" = rejected; anything else = accepted.');
+    // Device MAC: e9edcdaffa14
+    let workingPassword = null;
+    const passwordCandidates = [
+      { name: 'ASCII "000000" (0x30×6)', bytes: [0x30, 0x30, 0x30, 0x30, 0x30, 0x30] },
+      { name: 'Binary zeros (0x00×6)', bytes: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00] },
+      { name: 'ASCII "123456"', bytes: [0x31, 0x32, 0x33, 0x34, 0x35, 0x36] },
+      { name: 'MAC bytes raw [e9 ed cd af fa 14]', bytes: [0xe9, 0xed, 0xcd, 0xaf, 0xfa, 0x14] },
+      { name: 'MAC as ASCII "e9edcd"', bytes: [0x65, 0x39, 0x65, 0x64, 0x63, 0x64] },
+      { name: 'ASCII "000000" padded to 4 bytes', bytes: [0x30, 0x30, 0x30, 0x30] },
+      { name: 'ASCII "111111"', bytes: [0x31, 0x31, 0x31, 0x31, 0x31, 0x31] },
+      { name: 'ASCII "TimeFlip"', bytes: [0x54, 0x69, 0x6d, 0x65, 0x46, 0x6c] },
+    ];
+    for (const candidate of passwordCandidates) {
+      try {
+        const { eventsStr, resultHex, accepted } = await this._controller.client.probePassword(candidate.bytes);
+        if (accepted) {
+          ok(`Password ${candidate.name}: ACCEPTED — CHAR_EVENTS="${eventsStr}" CHAR_RESULT=[${resultHex}]`);
+          workingPassword = candidate;
+          break;
+        } else {
+          fail(`Password ${candidate.name}: REJECTED — CHAR_EVENTS="${eventsStr}" CHAR_RESULT=[${resultHex}]`);
+        }
+      } catch (err) {
+        fail(`Password ${candidate.name}: threw — ${err.message}`);
+      }
+      await sleep(500);
+    }
+    if (!workingPassword) {
+      fail('No password format was accepted. All subsequent tests will fail. Check ble_password setting.');
+    } else {
+      step(`Using accepted password for remainder of test: ${workingPassword.name}`);
+    }
+    await sleep(1000);
+
+    // ── Baseline status ───────────────────────────────────────────────────────
+    step('── Baseline STATUS query (0x10) ────────────────────────────────────');
+    await queryStatus('Baseline');
+    await sleep(1000);
+
+    // ── Test 1: Brightness ────────────────────────────────────────────────────
+    step('');
+    step('── Test 1: Brightness (cmd 0x09 0xNN) — watch LED brightness ───────');
+    for (const [pct, desc] of [[10, 'LED very dim'], [50, 'LED at half brightness'], [100, 'LED fully bright']]) {
+      await fire(`Brightness ${pct}%`, [0x09, pct], desc);
+      await sleep(7000);
+    }
+
+    // ── Test 2: Pause on / off (verified via STATUS query) ────────────────────
+    step('');
+    step('── Test 2: Pause on/off — verified via STATUS query after each ──────');
+    for (let i = 0; i < 2; i++) {
+      await fire('Pause ON', [0x06, 0x01], 'LED stops blinking (solid or off); tracking halted');
+      await sleep(1000);
+      const afterOn = await queryStatus('After Pause ON');
+      if (afterOn[1] === 0x01) ok('STATUS confirms: device is now PAUSED');
+      else fail(`STATUS says pause=${afterOn[1]} after Pause ON — expected 0x01`);
+      await sleep(7000);
+
+      await fire('Pause OFF', [0x06, 0x02], 'LED resumes blinking; tracking active');
+      await sleep(1000);
+      const afterOff = await queryStatus('After Pause OFF');
+      if (afterOff[1] === 0x02) ok('STATUS confirms: device is now RUNNING');
+      else fail(`STATUS says pause=${afterOff[1]} after Pause OFF — expected 0x02`);
+      await sleep(7000);
+    }
+
+    // ── Test 3: Color formats ─────────────────────────────────────────────────
+    step('');
+    step('── Test 3: LED color — all 4 wire formats, observe LED ─────────────');
+    step('Color commands have no readback. Watch the device.');
+
+    const facet = this._controller.getCurrentFacet() || 1;
+    step(`Using facet ${facet} (current active facet)`);
+
+    step('');
+    step('Format A — 16-bit per channel (SPEC §12: 0x11 facet RR RR GG GG BB BB):');
+    await fire('Color RED   16bit', [0x11, facet, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00], 'LED should turn RED');
+    await sleep(7000);
+    await fire('Color GREEN 16bit', [0x11, facet, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00], 'LED should turn GREEN');
+    await sleep(7000);
+    await fire('Color BLUE  16bit', [0x11, facet, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF], 'LED should turn BLUE');
+    await sleep(7000);
+
+    step('');
+    step('Format B — 8-bit per channel (0x11 facet RR GG BB):');
+    await fire('Color RED   8bit', [0x11, facet, 0xFF, 0x00, 0x00], 'LED should turn RED');
+    await sleep(7000);
+    await fire('Color GREEN 8bit', [0x11, facet, 0x00, 0xFF, 0x00], 'LED should turn GREEN');
+    await sleep(7000);
+    await fire('Color BLUE  8bit', [0x11, facet, 0x00, 0x00, 0xFF], 'LED should turn BLUE');
+    await sleep(7000);
+
+    step('');
+    step('Format C — RGB565 packed into 2 bytes (0x11 facet HH LL):');
+    await fire('Color RED   rgb565', [0x11, facet, 0xF8, 0x00], 'LED should turn RED');
+    await sleep(7000);
+    await fire('Color GREEN rgb565', [0x11, facet, 0x07, 0xE0], 'LED should turn GREEN');
+    await sleep(7000);
+    await fire('Color BLUE  rgb565', [0x11, facet, 0x00, 0x1F], 'LED should turn BLUE');
+    await sleep(7000);
+
+    step('');
+    step('Format D — percentage 0-100 in 16-bit (0x11 facet 0 R% 0 G% 0 B%):');
+    await fire('Color RED   pct', [0x11, facet, 0x00, 0x64, 0x00, 0x00, 0x00, 0x00], 'LED should turn RED');
+    await sleep(7000);
+    await fire('Color GREEN pct', [0x11, facet, 0x00, 0x00, 0x00, 0x64, 0x00, 0x00], 'LED should turn GREEN');
+    await sleep(7000);
+    await fire('Color BLUE  pct', [0x11, facet, 0x00, 0x00, 0x00, 0x00, 0x00, 0x64], 'LED should turn BLUE');
+    await sleep(7000);
+
+    step('');
+    step('╔══════════════════════════════════════════════════╗');
+    step('║          BLE TEST SEQUENCE COMPLETE              ║');
+    step('╚══════════════════════════════════════════════════╝');
+    step('Pause/lock: check PASS/FAIL lines above.');
+    step('Brightness/color: note what you observed on the device.');
+  }
+
+  _scheduleColorUpdate() {
+    if (this._colorUpdateTimer) clearTimeout(this._colorUpdateTimer);
+    this._colorUpdateTimer = setTimeout(async () => {
+      this._colorUpdateTimer = null;
+      const currentFacet = this.getCapabilityValue('timeflip_facet') || 1;
+      await this._applyColorToFacet(currentFacet);
+    }, 200);
+  }
+
+  async _applyColorToFacet(facetNum) {
+    if (!this._controller) return;
+    try {
+      const rgb = this.hsvToRgb(this._currentHue, this._currentSat, 1);
+      this.log(`Re-applying color to facet ${facetNum}: H=${this._currentHue} S=${this._currentSat}`);
+      await this._controller.setLedColor(facetNum, rgb.r, rgb.g, rgb.b, '16bit');
+    } catch (err) {
+      this.error('Failed to apply color to facet:', err.message);
+    }
   }
 }
 

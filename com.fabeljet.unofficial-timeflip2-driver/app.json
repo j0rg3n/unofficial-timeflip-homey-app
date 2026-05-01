@@ -201,6 +201,38 @@
           }
         ],
         "id": "facet_changed"
+      },
+      {
+        "title": {
+          "en": "TimeFlip facet label changed"
+        },
+        "titleFormatted": {
+          "en": "TimeFlip facet label changed for [[device]]"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=timeflip"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "facet",
+            "type": "number",
+            "title": {
+              "en": "Facet"
+            }
+          },
+          {
+            "name": "facet_name",
+            "type": "string",
+            "title": {
+              "en": "Facet name"
+            }
+          }
+        ],
+        "id": "facet_label_changed"
       }
     ],
     "conditions": [
@@ -583,6 +615,17 @@
           "value": "000000",
           "hint": {
             "en": "6-digit password"
+          }
+        },
+        {
+          "id": "ble_test_mode",
+          "type": "checkbox",
+          "label": {
+            "en": "BLE test mode"
+          },
+          "value": false,
+          "hint": {
+            "en": "On next connect, run an automated BLE command sequence to diagnose brightness, pause and color. Watch the device LED and check Homey logs for [TEST] output."
           }
         },
         {

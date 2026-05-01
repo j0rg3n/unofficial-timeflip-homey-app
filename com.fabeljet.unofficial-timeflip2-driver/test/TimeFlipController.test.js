@@ -18,9 +18,10 @@ describe('TimeFlipController', () => {
     it('connects and authenticates with password', async () => {
       await controller.start({ blePassword: '123456' });
 
-      const lastCmd = mock.getLastSentCommand();
-      assert.strictEqual(lastCmd.type, 'password');
-      assert.strictEqual(lastCmd.password, '123456');
+      const cmds = mock.getSentCommands();
+      const pwCmd = cmds.find((c) => c.type === 'password');
+      assert.ok(pwCmd, 'password should have been sent');
+      assert.strictEqual(pwCmd.password, '123456');
     });
 
     it('throws on invalid password', async () => {
@@ -188,12 +189,30 @@ describe('TimeFlipController', () => {
   });
 
   describe('setLedColor', () => {
-    it('sends color command with RGB values', async () => {
+    it('sends color command with RGB565 format (default)', async () => {
       await controller.start();
       await controller.setLedColor(3, 255, 128, 64);
 
       const lastCmd = mock.getLastSentCommand();
       assert.strictEqual(lastCmd.type, 'command');
+      // RGB565: r5=31, g6=31, b5=7 → (31<<11)|(31<<5)|7 = 0xFBE7
+      assert.deepStrictEqual(lastCmd.bytes, [0x11, 3, 0xFB, 0xE7]);
+    });
+
+    it('sends color command with 16-bit format when specified', async () => {
+      await controller.start();
+      await controller.setLedColor(3, 255, 128, 64, '16bit');
+
+      const lastCmd = mock.getLastSentCommand();
+      // 255->65535 (0xFFFF), 128->32896 (0x8080), 64->16448 (0x4040)
+      assert.deepStrictEqual(lastCmd.bytes, [0x11, 3, 0xFF, 0xFF, 0x80, 0x80, 0x40, 0x40]);
+    });
+
+    it('sends color command with 8-bit format when specified', async () => {
+      await controller.start();
+      await controller.setLedColor(3, 255, 128, 64, '8bit');
+
+      const lastCmd = mock.getLastSentCommand();
       assert.deepStrictEqual(lastCmd.bytes, [0x11, 3, 255, 128, 64]);
     });
   });

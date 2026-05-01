@@ -9,6 +9,7 @@ class MockBleClient {
     this._passwordResult = true;
     this._batteryLevel = 100;
     this._currentFacet = 0;
+    this._cmdQueue = Promise.resolve();
   }
 
   async connect() {
@@ -52,6 +53,11 @@ class MockBleClient {
   }
 
   async writeCommand(bytes) {
+    this._cmdQueue = this._cmdQueue.then(() => this._writeCommandInternal(bytes));
+    return await this._cmdQueue;
+  }
+
+  async _writeCommandInternal(bytes) {
     this._sentCommands.push({ type: 'command', bytes: [...bytes] });
     return [0x00, 0x02];
   }
