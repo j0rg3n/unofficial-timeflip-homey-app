@@ -509,14 +509,12 @@ this._controller = new TimeFlipController(client);
     step('── Password probe ───────────────────────────────────────────────────');
     step('Trying password encodings. Reading CHAR_EVENTS after each.');
     step('"password error" = rejected; anything else = accepted.');
-    // Device MAC: aabbccddeeff
+    // (device identifier intentionally omitted)
     let workingPassword = null;
     const passwordCandidates = [
       { name: 'ASCII "000000" (0x30×6)', bytes: [0x30, 0x30, 0x30, 0x30, 0x30, 0x30] },
       { name: 'Binary zeros (0x00×6)', bytes: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00] },
       { name: 'ASCII "123456"', bytes: [0x31, 0x32, 0x33, 0x34, 0x35, 0x36] },
-      { name: 'MAC bytes raw [aa bb cc dd ee ff]', bytes: [0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff] },
-      { name: 'MAC as ASCII "aabbcc"', bytes: [0x61, 0x61, 0x62, 0x62, 0x63, 0x63] },
       { name: 'ASCII "000000" padded to 4 bytes', bytes: [0x30, 0x30, 0x30, 0x30] },
       { name: 'ASCII "111111"', bytes: [0x31, 0x31, 0x31, 0x31, 0x31, 0x31] },
       { name: 'ASCII "TimeFlip"', bytes: [0x54, 0x69, 0x6d, 0x65, 0x46, 0x6c] },

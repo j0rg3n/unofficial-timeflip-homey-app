@@ -485,6 +485,10 @@ peripheral.on('disconnect')
 
 **Important:** The password characteristic resets on every disconnect — password must be re-sent on every reconnect.
 
+**Reconnection is persistent — the app never fully gives up.** After exhausting the exponential backoff (5 attempts, ~31s total), fall back to a slow polling interval (60s) and keep retrying indefinitely until the device is found or Homey restarts. This ensures recovery from extended BLE range loss without requiring a manual app restart. Each slow-retry round resets the attempt counter so full backoff runs again.
+
+**Double-tap sensitivity parameters (CMD `0x16`) must be applied on every connect**, not just when settings change. The device does not persist these across power cycles reliably; always write the current preset during the connect sequence after authentication.
+
 From Homey SDK v6+, peripherals no longer auto-disconnect after 60 seconds of inactivity, so a persistent connection is maintained throughout the session.
 
 ---

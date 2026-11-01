@@ -148,6 +148,15 @@ All Groups 1-7 complete ✓. Groups 8+ below are remaining work.
 
 - [x] Color picker sends conflicting commands (flash of new color, reverts to old color). **Fixed: hue/saturation listeners now debounce 200ms so both changes coalesce into one setLedColor call.**
 
+- [ ] App stops reconnecting after 5 failed attempts — requires app restart to recover.
+  - Root cause: `_attemptReconnect()` in `device.js` returns at `attempt >= 5` with no follow-up schedule.
+  - Fix: after exhausting backoff, schedule a persistent slow retry (every 60s) that resets the attempt counter, so full backoff runs again each round. Never give up.
+
+- [ ] Double-tap flow card doesn't fire.
+  - Likely cause 1: CMD `0x16` (double-tap params) is never sent on connect — add `setDoubleTapParams()` call to `TimeFlipController.start()` using the stored sensitivity preset.
+  - Likely cause 2: `subscribeToDoubleTap()` inline client calls `discoverServices([])` a second time after `subscribeToFacets()` already did — both methods should reuse the same discovered service object.
+  - Add `[BLE]` logging in the double-tap notification callback to confirm notifications arrive before debugging the flow card trigger.
+
 ## Untested features
 
 1. Facet flow cards trigger and have correct values.

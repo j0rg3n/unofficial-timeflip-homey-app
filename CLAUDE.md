@@ -1,86 +1,15 @@
-> This file contains project-specific rules for the TimeFlip Homey app
+> Project-specific rules for the TimeFlip Homey app
 
-## Dev flow
+## Workflow skills (project-level, in `.claude/skills/`)
 
-Follow these steps for every change you make:
+- `dev-flow` — the per-change workflow (todo, tests, smoke run, SPEC review, commit, learnings)
+- `test-coverage` — coverage targets, test naming, `npm run coverage`
+- `manual-ui-test` — how to validate UI-facing changes with the user
+- `homey-sdk-learnings` — Flow trigger, BLE, Insights and capability gotchas
 
-1. Refresh the todo list first
+## Rules that always apply
 
-2. Make cohesive, minimal sets of changes
-
-3. Run automated tests and check coverage. UI-facing changes require additional manual testing per Testing Rules.
-
-4. Use `timeout 10 homey app run --remote | ts` to smoke the app with timestamps.
-
-5. Review code vs. SPEC.md before committing.
-
-6. Commit after completing steps or even substeps in TODO.md.
-
-7. Record new learnings: 
-   
-   1. About Homey, the API, or tooling: Goes in AGENTS.md.
-   
-   2. About the final product: Goes in SPEC.md.
-
-## SPEC.md is the goalpost
-
-**Ask the user before changing `SPEC.md`.**
-
-- `TODO.md` has an ordered list of groups of work, each group can be done in parallel
-
-- `TODO.md` is just a reference to `SPEC.md`, where the actual specifications go.
-
-- Do not silently deviate from SPEC — if a spec decision turns out to be impractical, ask the user what to do.
-
-- SPEC.md is the source of truth for UX, interfaces, protocol details, data shapes, and capability mappings.
-
-## Testing Rules
-
-### Coverage
-
-- Overall coverage target: **> 65%**.
-- Coverage target for pure logic modules (`HistoryParser`, `InsightsAccumulator`, `TimeFlipController`): **> 80%**.
-- Do not merge a group's work if its coverage target is not met.
-- Run coverage with `npm run coverage` before considering a group done.
-
-### Test file naming
-
-- Unit tests: `test/<ModuleName>.test.js`
-- E2E tests: `test/e2e/<feature>.spec.js`
-- Mocks: `test/mocks/<MockName>.js`
-
-### Manual UI Testing
-
-- UI-facing changes (capabilities, flow cards, device settings UI, LED control, facet labels, toggles) need manual validation.
-- After UI fixes:
-  1. Prompt user with step-by-step test instructions
-  2. Provide test command: `cd com.fabeljet.unofficial-timeflip2-driver && homey app run --remote`
-  3. Stop and wait for user test results
-  4. Do not proceed/commit until user confirms fix works
-- Automated tests still required for accompanying logic changes.
-
-## Key Learnings
-
-### Flow Triggers (SDK v3)
-
-- `getTriggerCard()` returns `FlowCardTrigger` → use `trigger(tokens)` only
-- `getDeviceTriggerCard()` returns `FlowCardTriggerDevice` → use `trigger(device, tokens)`
-- Never pass device to `getTriggerCard().trigger()`
-- Device triggers need `device` arg with `filter: "driver_id=xxx"` in flow JSON
-
-### BLE Events
-
-- `subscribeToNotifications(cb)` callback receives raw Buffer, access bytes with `data[0]`
-- TimeFlip sends facet as single byte (1-12)
-- Add debounce: ignore if `this._currentFacet === facet`
-
-### Insights
-
-- Use `this.homey.insight.getLoggers()` NOT `this.homey.app.getInsightLoggers()`
-- Check `this.homey.insight` exists before calling
-
-### Capabilities
-
-- Use `dim` not `light_brightness` for LED brightness control
-- Standard light capabilities: `onoff`, `dim`, `light_hue`, `light_saturation`
-- Re-pair device when changing capabilities - UI doesn't update without re-pairing
+- **SPEC.md is the goalpost.** Ask the user before changing it, and never silently deviate from it.
+- Run `npm run coverage` before considering a TODO group done.
+- Do not commit UI-facing changes until the user has confirmed them (see `manual-ui-test`).
+- **No real people, places, events or device identifiers** in docs, comments, test data or fixtures. Use fictional or placeholder values (e.g. `aabbccddeeff`). Required publishing metadata (author in `app.json`) is the exception.
