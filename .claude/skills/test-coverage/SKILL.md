@@ -1,6 +1,6 @@
 ---
 name: test-coverage
-description: Coverage targets, test file naming and how to run coverage for the TimeFlip app. Use when writing tests or deciding whether a TODO group is done.
+description: Coverage targets, test file naming and how to run coverage for the TimeFlip app. Use when writing tests or deciding whether an issue is done.
 ---
 
 # Tests and coverage
